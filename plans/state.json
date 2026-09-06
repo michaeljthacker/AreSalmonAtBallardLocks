@@ -1,0 +1,30 @@
+{
+  "$schema": "state.schema.json",
+  "version": "0.2",
+
+  "build_id": "B1",
+  "milestone_id": "M1",
+  "phase_id": null,
+  "step_id": null,
+
+  "pause_type": "decision",
+
+  "last_action": {
+    "action_id": "Human.InitializeProject",
+    "result": "ok",
+    "summary": "Initialized plans/ skeleton. Run Product.ProductVision to begin."
+  },
+
+  "next_action_id": "Product.ProductVision",
+
+  "blockers": [],
+
+  "context": {
+    "goal": "<fill in: what are we building?>",
+    "notes": [
+      "STATE is the routing source of truth.",
+      "STATUS must be updated every action.",
+      "Thread is active working memory; prune when there is genuinely prunable/promotable content, not merely because it is long (prunability gate — see plans/README.md 'Thread management' and D-026). Cannot prune before most content before Code Review and Human Approval."
+    ]
+  }
+}

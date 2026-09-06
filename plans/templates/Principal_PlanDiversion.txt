@@ -1,0 +1,145 @@
+ROLE: Principal
+TASK: PlanDiversion
+
+Goal: Re-plan mid-flight when reality has diverged from the current plan. Assess what
+needs to change (new milestone, new phase, extra steps, or just a note), propose the
+edits to the human in chat, get confirmation, then apply them and route the workflow
+to the correct re-approval or resume point.
+
+This action is HUMAN-INITIATED. The human (or a helper) set `next_action_id =
+Principal.PlanDiversion` because the current MILESTONE.md / BUILD.md no longer matches
+the work that needs to happen. Common triggers: discovered work that doesn't fit any
+existing phase, a milestone needs to be split or reordered, scope shifted after
+implementation began, BACKLOG has accumulated work that should be promoted into the
+plan.
+
+Inputs:
+- plans/state.json (current position + context)
+- plans/config.json (workspace.shared_repos for scope routing; `status_updates` for STATUS gating + reroute)
+- plans/BUILD.md (milestone breakdown — may need to change)
+- plans/MILESTONE.md (phase breakdown for current milestone — may need to change)
+- plans/STATUS.md (current snapshot)
+- plans/BACKLOG.md (candidate work to promote into the plan)
+- plans/thread.md (recent context — what triggered the diversion)
+- plans/DECISIONS.md (capture rationale for the change)
+
+Instructions:
+1) Confirm the trigger. Read the most recent entries in plans/thread.md and the human's
+   chat message. If the reason for diverting is unclear, ASK the human in chat before
+   proceeding. Do not invent a reason to divert.
+
+2) Classify the diversion scope. Pick exactly one:
+   (a) Note only — the plan is correct; only thread.md / DECISIONS.md need an entry.
+       No file edits to BUILD.md or MILESTONE.md.
+   (b) New steps — current Phase needs additional Steps; phase boundary unchanged.
+       Edits MILESTONE.md (Steps under the current Phase only).
+   (c) New / restructured Phases — current Milestone needs a new Phase, a phase split,
+       reorder, or removal. Edits MILESTONE.md.
+   (d) New / restructured Milestones — Build needs a new Milestone, a milestone split,
+       reorder, or removal. Edits BUILD.md (and likely MILESTONE.md for the active one).
+
+   **Size compatibility check.** Read `size` from plans/BUILD.md frontmatter (treat
+   missing frontmatter as `full` per plans/FORMATS.md). If the diversion grows scope
+   past the current size's cap (see plans/FORMATS.md), the diversion MUST also raise
+   `size` to the smallest value that fits, and the scope class becomes (d) — BUILD.md
+   frontmatter is changing, which requires Human.ApproveBuild.
+   Cap reminders:
+   - `step-only` → adding a 4th+ step or a 2nd phase forces size bump to `phase-only` (4th+ step) or `single-milestone` (2nd phase)
+   - `phase-only` → adding a 2nd phase forces size bump to `single-milestone`
+   - `single-milestone` → adding a 2nd milestone forces size bump to `full`
+   Down-sizing (e.g., `full` → `single-milestone` after dropping a milestone) is allowed
+   but should be noted in plans/thread.md so the change is visible. Down-sizing through
+   scope class (d) still routes through Human.ApproveBuild.
+
+   **Escalation off the step-only carve-out.** When escalating *from* `size: step-only`
+   to any larger size, the build switches from the carve-out route (ProductVision →
+   ApproveBuild → QuickImplement) onto the standard chain (ApproveBuild → MilestonePlan
+   → …). The diversion must rewrite plans/BUILD.md so it has the full structure the
+   standard chain expects (Purpose, Scope, Success criteria, Milestones, Risks) — the
+   minimal step-only BUILD.md is not enough for Principal.MilestonePlan to work from.
+   Treat this as scope class (d): the proposal in step 3 must include the rewritten
+   BUILD.md, and routing goes through Human.ApproveBuild → Principal.MilestonePlan.
+   Any code already implemented under the step-only attempt stays; record it in the
+   thread.md diversion entry so the new MilestonePlan can plan around it.
+
+3) Propose, then wait for confirmation. Write a short proposal in chat covering:
+   - Scope class (a / b / c / d)
+   - Concrete edits planned for each file (BUILD.md, MILESTONE.md, DECISIONS.md,
+     thread.md) — exact sections and the gist of the new text
+   - Rationale (one or two sentences — why this diversion is needed)
+   - Where the workflow resumes after the diversion
+   STOP and wait for the human's explicit confirmation before writing any files.
+   If the human declines or modifies the proposal, revise and re-propose.
+
+4) Apply the confirmed changes:
+   - Update plans/BUILD.md only if scope class is (d).
+   - Update plans/MILESTONE.md if scope class is (b), (c), or (d) and the active
+     milestone's phases changed.
+   - Append a DECISIONS.md entry ONLY when the rationale generalizes (will matter in
+     3 months, affects multiple features/systems, has a non-obvious rationale worth
+     preserving). Use the standard entry format with the `**Why this matters
+     long-term:**` line. Project-scoped entries go to the primary repo's
+     plans/DECISIONS.md — never write directly to a shared repo from this action;
+     promotion is PM.ThreadMaintenance's job.
+   - Append a plans/thread.md entry at the bottom: `### Principal.PlanDiversion — <date>`
+     summarizing the diversion and the resume point.
+
+5) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Recent: "Principal.PlanDiversion — <one-line summary of what changed>"
+     - Next: the action you are routing to in step 6
+   - Otherwise: SKIP. The downstream PM.StatusUpdate (inserted by step 6 routing
+     for scopes (a)/(b), or by Human.ApproveMilestone/Human.ApproveBuild for
+     scopes (c)/(d)) will refresh STATUS for this transition.
+
+6) Update plans/state.json:
+   - last_action.action_id = Principal.PlanDiversion
+   - last_action.result = "ok"
+   - Re-read `status_updates` from plans/config.json (default: "pm_only" if missing).
+     For scopes (a) and (b) only, the routing changes based on this setting so the
+     diversion is captured in STATUS via PM.StatusUpdate. Scopes (c) and (d) always
+     route to a Human.*Approv* action, which itself fans through PM.StatusUpdate
+     under non-`every_action` settings — so their routing is unchanged here.
+   - Route to the correct re-approval or resume point based on scope class:
+     - (a) Note only:
+       - Determine the resume target: the action the workflow was paused at before
+         the diversion (preserve from context if known, otherwise the action that
+         fits the current phase position). Call this <resume_target>.
+       - If `status_updates = "every_action"`:
+         - next_action_id = <resume_target>
+         - pause_type = "continue"
+       - Otherwise:
+         - next_action_id = PM.StatusUpdate
+         - pause_type = "continue"
+         - Set context.notes = "After StatusUpdate: proceed to <resume_target>"
+     - (b) New steps:
+       - phase_id stays at the current Phase; step_id = null
+       - If `status_updates = "every_action"`:
+         - next_action_id = Staff.DraftQuestions
+         - pause_type = "continue"
+       - Otherwise:
+         - next_action_id = PM.StatusUpdate
+         - pause_type = "continue"
+         - Set context.notes = "After StatusUpdate: proceed to Staff.DraftQuestions"
+     - (c) New / restructured Phases (MILESTONE.md changed):
+       - next_action_id = Human.ApproveMilestone
+       - pause_type = "decision"
+     - (d) New / restructured Milestones (BUILD.md changed):
+       - next_action_id = Human.ApproveBuild
+       - pause_type = "decision"
+
+Constraints:
+- Do not implement code in this action.
+- Do not silently modify files — every file edit must be in the proposal the human
+  confirmed.
+- Do not create blockers unless the human cannot decide; PlanDiversion is itself the
+  re-planning mechanism.
+- Do not promote shared-repo standards from here. Multi-root scope routing applies:
+  consult workspace.shared_repos in plans/config.json. Project-scoped decisions about
+  shared code stay in the primary repo's plans/DECISIONS.md.
+
+Output:
+- The proposal (before human confirmation)
+- After confirmation: a brief summary and the exact edits applied to each modified file

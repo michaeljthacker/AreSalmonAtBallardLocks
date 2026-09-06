@@ -1,0 +1,198 @@
+{
+  "version": "0.3",
+  "action_id_convention": "Role.Task",
+  "note": "All 19 actions have templates. See plans/templates/ for individual action prompts.",
+
+  "actions": [
+    {
+      "action_id": "Product.ProductVision",
+      "role": "Product",
+      "task": "ProductVision",
+      "template_path": "plans/templates/Product_ProductVision.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/VISION.md", "plans/thread.md"],
+      "required_outputs": ["README.md", "plans/BUILD.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Principal.BuildReview",
+      "role": "Principal",
+      "task": "BuildReview",
+      "template_path": "plans/templates/Principal_BuildReview.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/VISION.md", "plans/BUILD.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/thread.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Human.ApproveBuild",
+      "role": "Human",
+      "task": "ApproveBuild",
+      "template_path": "plans/templates/Human_ApproveBuild.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/BUILD.md", "plans/thread.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Principal.MilestonePlan",
+      "role": "Principal",
+      "task": "MilestonePlan",
+      "template_path": "plans/templates/Principal_MilestonePlan.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/VISION.md", "plans/BUILD.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/MILESTONE.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Human.ApproveMilestone",
+      "role": "Human",
+      "task": "ApproveMilestone",
+      "template_path": "plans/templates/Human_ApproveMilestone.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/MILESTONE.md", "plans/BUILD.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Staff.DraftQuestions",
+      "role": "Staff",
+      "task": "DraftQuestions",
+      "template_path": "plans/templates/Staff_DraftQuestions.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/MILESTONE.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/thread.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Principal.AnswerQuestions",
+      "role": "Principal",
+      "task": "AnswerQuestions",
+      "template_path": "plans/templates/Principal_AnswerQuestions.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/thread.md", "plans/MILESTONE.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/thread.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Staff.ImplementationExecution",
+      "role": "Staff",
+      "task": "ImplementationExecution",
+      "template_path": "plans/templates/Staff_ImplementationExecution.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/MILESTONE.md", "plans/thread.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/thread.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": true }
+    },
+    {
+      "action_id": "Staff.QuickImplement",
+      "role": "Staff",
+      "task": "QuickImplement",
+      "template_path": "plans/templates/Staff_QuickImplement.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/VISION.md", "plans/BUILD.md", "plans/thread.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/thread.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": true }
+    },
+    {
+      "action_id": "Principal.CodeReview",
+      "role": "Principal",
+      "task": "CodeReview",
+      "template_path": "plans/templates/Principal_CodeReview.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/MILESTONE.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/thread.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/thread.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Staff.ReviewReconciliation",
+      "role": "Staff",
+      "task": "ReviewReconciliation",
+      "template_path": "plans/templates/Staff_ReviewReconciliation.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/thread.md", "plans/MILESTONE.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/BACKLOG.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/thread.md", "plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": true }
+    },
+    {
+      "action_id": "PM.StatusUpdate",
+      "role": "PM",
+      "task": "StatusUpdate",
+      "template_path": "plans/templates/PM_StatusUpdate.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/thread.md", "plans/MILESTONE.md", "plans/STATUS.md", "plans/BACKLOG.md", "plans/CHANGELOG.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/BACKLOG.md", "plans/CHANGELOG.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Writer.DocumentationUpdate",
+      "role": "Writer",
+      "task": "DocumentationUpdate",
+      "template_path": "plans/templates/Writer_DocumentationUpdate.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/MILESTONE.md", "plans/thread.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Human.PhaseApproval",
+      "role": "Human",
+      "task": "PhaseApproval",
+      "template_path": "plans/templates/Human_PhaseApproval.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/STATUS.md", "plans/thread.md", "plans/MILESTONE.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "PM.AdvancePhase",
+      "role": "PM",
+      "task": "AdvancePhase",
+      "template_path": "plans/templates/PM_AdvancePhase.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/BUILD.md", "plans/MILESTONE.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/state.json", "plans/STATUS.md"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "PM.MilestoneCloseout",
+      "role": "PM",
+      "task": "MilestoneCloseout",
+      "template_path": "plans/templates/PM_MilestoneCloseout.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/BUILD.md", "plans/MILESTONE.md", "plans/STATUS.md", "plans/BACKLOG.md", "plans/CHANGELOG.md", "plans/thread.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/BACKLOG.md", "plans/CHANGELOG.md", "plans/state.json"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "PM.ThreadMaintenance",
+      "role": "PM",
+      "task": "ThreadMaintenance",
+      "template_path": "plans/templates/PM_ThreadMaintenance.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/thread.md", "plans/MILESTONE.md", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/STATUS.md"],
+      "required_outputs": ["plans/thread.md", "plans/STATUS.md", "plans/state.json", "plans/DECISIONS.md", "plans/STANDARDS.md", "plans/MILESTONE.md"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Principal.PlanDiversion",
+      "role": "Principal",
+      "task": "PlanDiversion",
+      "template_path": "plans/templates/Principal_PlanDiversion.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/config.json", "plans/BUILD.md", "plans/MILESTONE.md", "plans/STATUS.md", "plans/BACKLOG.md", "plans/thread.md", "plans/DECISIONS.md"],
+      "required_outputs": ["plans/STATUS.md", "plans/state.json", "plans/thread.md"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    },
+    {
+      "action_id": "Human.ResolveBlocker",
+      "role": "Human",
+      "task": "ResolveBlocker",
+      "template_path": "plans/templates/Human_ResolveBlocker.txt",
+      "status": "ready",
+      "inputs": ["plans/state.json", "plans/thread.md", "plans/STATUS.md", "plans/BUILD.md", "plans/MILESTONE.md"],
+      "required_outputs": ["plans/state.json", "plans/STATUS.md", "plans/thread.md"],
+      "gates": { "update_status_required": true, "tests_required": false }
+    }
+  ]
+}

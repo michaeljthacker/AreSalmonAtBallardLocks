@@ -1,0 +1,129 @@
+ROLE: Staff
+TASK: ReviewReconciliation
+
+Goal:
+Address review feedback from the most recent Principal code review — both REQUIRED
+changes and SUGGESTED improvements.
+
+This action always runs after Principal.CodeReview. Check plans/state.json
+`last_action.result` to determine your posture.
+
+Inputs:
+- plans/thread.md (review feedback)
+- Code changes / repository state
+- plans/config.json (workflow configuration — read `re_review_trigger`, `workspace`, and `status_updates`)
+- plans/MILESTONE.md (acceptance criteria)
+- plans/DECISIONS.md (project-specific architectural choices)
+- plans/STANDARDS.md (team-level rules portable across projects)
+- plans/BACKLOG.md (for logging tech debt)
+- plans/STATUS.md
+- plans/state.json
+
+Instructions:
+1) Read plans/state.json `last_action.result` to determine the review outcome
+   (this tells you your posture — whether there are blocking issues):
+   - If `changes_required`: there are REQUIRED items that must be fixed.
+   - If `approved`: there are no REQUIRED items, but there may be SUGGESTED items.
+   Then read plans/thread.md for the detailed review feedback
+   (the specific REQUIRED and SUGGESTED items to address).
+2) Handle REQUIRED items (if `changes_required`):
+   - Identify all REQUIRED review items in plans/thread.md.
+   - Implement changes to address each REQUIRED item.
+   - Do not skip unresolved REQUIRED feedback.
+3) Triage SUGGESTED items (always, regardless of review outcome):
+   - For each SUGGESTED improvement in plans/thread.md:
+     - If it is quick to implement or high-value: implement it now.
+     - Otherwise: log it as a specific, actionable tech debt item in plans/BACKLOG.md
+       (P1 or P2 as appropriate). BACKLOG is for future work only — do not log
+       current-phase tasks or implementation details here.
+   - It is acceptable to implement all, some, or none of the suggestions.
+   - Tech debt entries about shared-repo code stay in the primary repo's BACKLOG.md
+     (BACKLOG is project-scoped, not shared-scoped).
+3a) Workspace scope (multi-root only):
+   - Read `workspace.shared_repos` from plans/config.json (default: empty).
+   - If any code change you make falls inside a `shared_repos[].path`, that change is
+     **shared scope**. Code edits in shared repos are allowed; STANDARDS.md /
+     DECISIONS.md edits in shared repos are NOT — those are reserved for
+     PM.ThreadMaintenance with explicit human approval.
+   - Any DECISIONS/STANDARDS-style finding from the review goes to the primary repo's
+     plans/DECISIONS.md or plans/STANDARDS.md, even when it concerns shared code.
+   - Flag shared-repo edits in your thread.md entry (see step 5).
+
+3b) Recording DECISIONS/STANDARDS findings from the review:
+   - **Before recording, classify** each finding as one of:
+       (a) `implementation detail` — local code structure, one-off tradeoff. Do NOT
+           record in DECISIONS.md or STANDARDS.md. Address it in the code or log it as
+           BACKLOG tech debt instead.
+       (b) `project decision` — durable, project-specific. Record in primary repo's
+           plans/DECISIONS.md.
+       (c) `shared/platform standard` — rule that would apply to any project using the
+           same shared code or platform. Record in primary repo's plans/STANDARDS.md
+           (promotion to a shared repo is handled later by PM.ThreadMaintenance).
+     Do NOT write the bucket label into DECISIONS.md / STANDARDS.md — the classification
+     is a decision-making heuristic, not metadata to persist.
+   - **Record only if future work would benefit from knowing the rationale.** Apply
+     these checks before writing an entry:
+       - Will this matter in 3 months?
+       - Does it affect multiple features or systems?
+       - Is there a non-obvious rationale worth preserving?
+     If you can't say "yes" to at least one, do not record it. "Reviewer suggested X
+     and we did X" is not a decision worth preserving.
+   - **Every DECISIONS/STANDARDS entry MUST include a `**Why this matters long-term:**`
+     line** capturing the rationale. If you can't write a meaningful one, the entry
+     doesn't belong there. See plans/FORMATS.md for the entry format.
+4) Commit any code changes.
+   - **NEVER prefix commit messages with `--AUTO-`.** That prefix is reserved
+     exclusively for automated SAM commits made by `plans/commit.ps1`; a manual
+     commit that carries it corrupts the organic-vs-automated distinction in
+     `git log`. Write a plain, human-readable subject describing the change.
+       ✅ good:  `Address review: validate empty search input`
+       ❌ WRONG: `--AUTO-B2-M1-P2-Staff.ReviewReconciliation: fix input validation`
+   - For shared-repo code edits, commit inside the shared repo using its own commit
+     conventions. The primary repo's commit covers the rest.
+5) Append a new entry at the bottom of plans/thread.md:
+   - Use the entry format: `---` then `### Staff.ReviewReconciliation — <date>`
+   - For each REQUIRED item: note how it was addressed.
+   - For each SUGGESTED item: note whether it was implemented or logged to BACKLOG.
+   - If any code was changed, clearly describe what changed so that Principal can
+     perform a targeted re-review (not a full Phase review).
+   - For any change inside a `workspace.shared_repos[].path`, prefix that bullet with
+     "shared scope (<repo name>):" so the workspace boundary is visible in the log.
+   - Note any follow-up questions if something was unclear.
+6) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Add a bullet summarizing reconciliation.
+   - Otherwise: SKIP. The PM.StatusUpdate that runs next will summarize.
+7) Update plans/state.json:
+   - last_action.action_id = Staff.ReviewReconciliation
+   - last_action.result = "ok"
+   - If any code was changed (REQUIRED fixes or implemented suggestions):
+     - Read `re_review_trigger` from plans/config.json (default: "auto" if missing):
+       - "required": pause_type = "continue", next_action_id = Principal.CodeReview
+         (Principal will perform a targeted re-review scoped to reconciliation changes.)
+       - "auto": Evaluate whether the scope and nature of the changes warrant re-review.
+         Consider: did you change control flow, public interfaces, or security-sensitive
+         code? If yes → next_action_id = Principal.CodeReview. If the changes were
+         mechanical, cosmetic, or narrowly scoped → next_action_id = PM.StatusUpdate.
+         You MUST document your re-review decision and reasoning in the thread entry.
+   - If no code was changed (all suggestions logged or dismissed):
+     - pause_type = "continue"
+     - next_action_id = PM.StatusUpdate
+   - If new questions arise:
+     - pause_type = "continue"
+     - next_action_id = Principal.AnswerQuestions
+   - If a human decision is required:
+     - last_action.result = "blocked"
+     - pause_type = "decision"
+     - next_action_id = Human.ResolveBlocker
+
+Constraints:
+- Do not introduce new scope beyond what was suggested in the review.
+- Do not advance to the next Phase.
+- Do not skip unresolved REQUIRED feedback.
+
+Output:
+- Brief summary
+- Commit(s) (if any code was changed)
+- Exact edits to plans/thread.md, plans/STATUS.md, plans/state.json, and plans/BACKLOG.md (if applicable)

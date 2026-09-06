@@ -1,0 +1,155 @@
+ROLE: PM
+TASK: StatusUpdate
+
+Goal: Update plans/STATUS.md, plans/BACKLOG.md, and plans/CHANGELOG.md to reflect the current state of the project after a Phase's implementation and review cycle is complete.
+
+This action runs after Staff.ReviewReconciliation completes the review cycle (routing to PM.StatusUpdate means no further code changes were needed). It captures what was accomplished and surfaces any new work items.
+
+Inputs:
+- plans/state.json (routing + context — including any context.notes hand-off)
+- plans/config.json (workflow configuration — read `documentation_update`,
+  `formal_approval`, and `status_updates`)
+- plans/thread.md (implementation details, review feedback, decisions)
+- plans/MILESTONE.md (acceptance criteria to check off)
+- plans/STATUS.md (current snapshot)
+- plans/BACKLOG.md (pending work)
+- plans/CHANGELOG.md (change history)
+
+This action runs in one of two contexts:
+- **Phase-end** (the standard case) — invoked after Staff.ReviewReconciliation. It
+  summarizes the phase, updates BACKLOG/CHANGELOG, and routes onward via the
+  config-driven destination logic in step 5b.
+- **Hand-off** — invoked by Human.ApproveBuild, Human.ApproveMilestone, or
+  Principal.PlanDiversion (scopes a/b) under `status_updates ≠ every_action`. The
+  upstream action set `context.notes = "After StatusUpdate: proceed to <X>"`. PM
+  refreshes STATUS to capture the major transition, then routes to X. BACKLOG and
+  CHANGELOG are updated only if relevant (typically nothing to do post-approval).
+
+Detect the context from `last_action.action_id` and from the presence of an
+"After StatusUpdate: proceed to <X>" entry in `context.notes`.
+
+Instructions:
+1) Review plans/thread.md for what was implemented and any review outcomes.
+2) Update plans/STATUS.md — frequency is governed by `status_updates` in
+   plans/config.json (default: "pm_only" if missing):
+   - `every_action`: write the full snapshot below.
+   - `pm_only`: write the full snapshot below. (PM.StatusUpdate is the canonical
+     STATUS writer under this setting.)
+   - `every_milestone`: write the full snapshot ONLY if this invocation corresponds
+     to the LAST phase of the milestone (check plans/MILESTONE.md). For non-last
+     phases, SKIP the STATUS write entirely. Hand-off invocations (post-approval /
+     post-diversion) always write — they are explicit transition events, not
+     phase-end checkpoints.
+   - `never`: do NOT write a normal STATUS snapshot. If plans/STATUS.md is not
+     currently the disabled stub, REPLACE it with the stub:
+     ```
+     # STATUS
+
+     _(STATUS updates disabled via config: status_updates=never)_
+     ```
+     This is the one-time normalization when `never` is newly applied. After that,
+     leave STATUS.md untouched on subsequent runs.
+
+   When writing the full snapshot, set:
+   - Top: `**Update configuration:** status_updates=<current value from config.json>`
+   - Now: update Build/Milestone/Phase IDs to reflect current state
+   - Blockers: clear resolved blockers, add any new ones
+   - Recent: summarize what was implemented/reviewed/approved (phase-end) OR
+     describe the transition just recorded (hand-off — e.g., "Build approved",
+     "Milestone approved", "Plan diversion: <scope>")
+   - Next: indicate what happens next
+3) Update plans/BACKLOG.md (only if relevant):
+   - Phase-end: remove completed items addressed in this Phase; add any new items
+     discovered (tech debt, follow-ups, non-blocking suggestions from code review).
+     Prioritize: P0 = do next, P1 = important, P2 = nice-to-have. BACKLOG is for
+     future work only — do not add in-progress tasks, current-phase remaining work,
+     or implementation details (those belong in state.json/thread.md).
+   - Hand-off: typically nothing to do. If the upstream action surfaced a follow-up
+     worth tracking, log it; otherwise leave BACKLOG unchanged.
+4) Update plans/CHANGELOG.md (only if relevant):
+   - Phase-end: add an entry under "Unreleased" describing the Phase's changes —
+     what changed, key files affected, brief rationale.
+   - Hand-off: typically no entry. Approvals and diversions are not Phase deltas.
+5) Update plans/state.json:
+   - last_action.action_id = PM.StatusUpdate
+   - last_action.result = "ok"
+   - last_action.summary: state plainly what was updated and the resume point. Do NOT
+     justify non-actions with config citations (e.g. "(status_updates=pm_only)") or
+     pause_type reasoning — see plans/FORMATS.md § "`last_action.summary` guidance".
+   - **5a) Hand-off destination (takes precedence):** if `context.notes` contains
+     an "After StatusUpdate: proceed to <X>" entry, the destination is X. Clear
+     that entry from context.notes and skip the phase-end logic in 5b.
+   - **5b) Phase-end destination** (when no hand-off entry is present):
+     - First, run a **cursory prunability check** to decide whether routing through
+       PM.ThreadMaintenance is worthwhile *right now*. Length alone is NOT sufficient —
+       a long thread whose content is all still needed should NOT be routed to
+       maintenance (that just churns and re-routes with nothing pruned, which is the
+       failure mode this check exists to prevent). Route to ThreadMaintenance only if
+       there is content it could actually remove, compress, or promote *given the
+       current config and state*. Apply these gates (use defaults when a config key
+       is absent):
+         - `code_review = "every_milestone"` and this is NOT the last phase of the
+           milestone → this milestone's implementation details, review requests, and
+           Q&A are still needed (CodeReview hasn't run) → not prunable yet.
+         - `formal_approval = "every_milestone"` and NOT the last phase → phase
+           summaries / acceptance notes are still needed → not prunable yet.
+         - `documentation_update = "every_milestone"` and NOT the last phase → this
+           milestone's implementation details are still needed by Writer → not
+           prunable yet.
+       After applying the gates, thread maintenance is worthwhile only if at least one
+       of these is true:
+         - There is resolved content from an already-closed phase (whose gates above
+           have passed) that can be compressed or dropped.
+         - There is a durable decision/standard sitting in thread.md that should be
+           promoted to DECISIONS.md / STANDARDS.md now.
+         - The thread contains substantial genuinely-resolved back-and-forth not
+           protected by any gate above.
+       If NONE of these hold (e.g., everything in the thread belongs to the current,
+       still-open milestone under an `every_milestone` gate), do NOT route to
+       ThreadMaintenance — proceed straight to the destination below. When in doubt,
+       skip maintenance; it will get another chance next phase and always runs at
+       milestone closeout.
+     - Then, determine the DESTINATION action by evaluating in order (use defaults
+       when a config key is absent):
+
+       a) Is Writer.DocumentationUpdate needed?
+          - First, read `size` from plans/BUILD.md frontmatter (treat missing as
+            `full`). For `size: phase-only`, Writer.DocumentationUpdate is **skipped
+            unconditionally** — the build is too small to justify a separate doc
+            pass, and the closeout CHANGELOG entry covers what changed. Answer NO
+            and proceed to (b). For all other sizes, apply the config gate below.
+          - `documentation_update = "every_phase"`: YES
+          - `documentation_update = "every_milestone"`: YES only if this is the LAST
+            phase in the milestone (check plans/MILESTONE.md). NO otherwise.
+          - `documentation_update = "never"`: NO
+       b) Is Human.PhaseApproval needed?
+          - `formal_approval = "every_phase"`: YES
+          - `formal_approval = "every_milestone"`: YES only if this is the LAST phase. NO otherwise.
+          - `formal_approval = "never"`: NO
+       c) Resolve destination:
+          - If Writer needed → destination = Writer.DocumentationUpdate
+          - Else if PhaseApproval needed → destination = Human.PhaseApproval
+          - Else → destination = PM.AdvancePhase
+
+     - If the prunability check above concluded maintenance is worthwhile:
+       - pause_type = "continue"
+       - next_action_id = PM.ThreadMaintenance
+       - Add a context.notes entry: "After ThreadMaintenance: proceed to <destination>"
+   - **5c) Pause type and routing (both 5a and 5b):**
+     - next_action_id = <destination>
+     - If destination is Human.PhaseApproval (or any other Human.*): pause_type = "decision"
+     - Otherwise: pause_type = "continue"
+   - If a blocker is discovered:
+     - last_action.result = "blocked"
+     - pause_type = "decision"
+     - next_action_id = Human.ResolveBlocker
+
+Constraints:
+- Do not implement code.
+- Do not modify plans/MILESTONE.md (acceptance criteria stay as-is for Phase approval).
+- Keep CHANGELOG entries concise — one to three bullets per Phase.
+- Keep BACKLOG items actionable — no vague "improve X" without specifics.
+
+Output:
+- Brief summary
+- Exact edits to plans/STATUS.md, plans/BACKLOG.md, plans/CHANGELOG.md, plans/state.json

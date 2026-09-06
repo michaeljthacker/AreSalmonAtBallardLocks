@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAM config.json",
+  "description": "Project-level workflow configuration for SAM. Tune process weight without breaking the state machine. Defaults favor milestone-level gates: code_review, formal_approval, and documentation_update all default to every_milestone, and re_review_trigger defaults to auto. Missing file or missing key = default.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional JSON Schema reference for editor validation."
+    },
+    "code_review": {
+      "type": "string",
+      "description": "How often Principal.CodeReview runs after Staff.ImplementationExecution. 'every_phase' = always. 'every_milestone' = only on the last phase of each milestone, reviewing all phases of the milestone (default). 'never' = skip code review entirely, route straight to PM.StatusUpdate.",
+      "enum": ["every_phase", "every_milestone", "never"],
+      "default": "every_milestone"
+    },
+    "formal_approval": {
+      "type": "string",
+      "description": "How often Human.PhaseApproval runs. 'every_phase' = always. 'every_milestone' = only on the last phase of each milestone, briefing the whole milestone (default). 'never' = skip formal approval entirely (Human.ApproveMilestone still applies).",
+      "enum": ["every_phase", "every_milestone", "never"],
+      "default": "every_milestone"
+    },
+    "documentation_update": {
+      "type": "string",
+      "description": "How often Writer.DocumentationUpdate runs. 'every_phase' = always. 'every_milestone' = only on the last phase of each milestone (default). 'never' = skip documentation updates entirely.",
+      "enum": ["every_phase", "every_milestone", "never"],
+      "default": "every_milestone"
+    },
+    "review_strictness": {
+      "type": "string",
+      "description": "Threshold for REQUIRED vs. SUGGESTED findings in Principal.CodeReview. 'strict' = deviations from STANDARDS/DECISIONS are REQUIRED; best-practice violations are pushed harder. 'balanced' = correctness issues and clear standard violations are REQUIRED; style preferences are SUGGESTED (default). 'pragmatic' = only correctness and security issues are REQUIRED; everything else is SUGGESTED.",
+      "enum": ["strict", "balanced", "pragmatic"],
+      "default": "balanced"
+    },
+    "re_review_trigger": {
+      "type": "string",
+      "description": "When Staff.ReviewReconciliation changes code, should it always trigger a re-review? 'required' = always route back to Principal.CodeReview if any code changed. 'auto' = AI judges whether the scope/nature of changes warrants re-review and documents reasoning (default).",
+      "enum": ["required", "auto"],
+      "default": "auto"
+    },
+    "status_updates": {
+      "type": "string",
+      "description": "How often plans/STATUS.md is updated. 'every_action' = every action that currently writes STATUS continues to (backward compatible). 'pm_only' = only PM.StatusUpdate writes STATUS; other actions skip the write. Routing inserts PM.StatusUpdate after Human.ApproveBuild, Human.ApproveMilestone, and Principal.PlanDiversion (scopes a/b) so major transitions are still captured (default). 'every_milestone' = like pm_only, but PM.StatusUpdate writes only on the last phase of each milestone. 'never' = STATUS is not updated (Product.ProductVision creates a disabled stub; PM.StatusUpdate normalizes to the stub if it sees a non-stub file). Under any setting except every_action, expect a one-phase STATUS lag during transitions.",
+      "enum": ["every_action", "pm_only", "every_milestone", "never"],
+      "default": "pm_only"
+    },
+    "workspace": {
+      "type": "object",
+      "description": "Multi-root workspace configuration. Defines the primary repo (which owns plans/) and any shared repos that receive code/STANDARDS/DECISIONS updates without their own plans/ wrapper. For single-repo projects, define primary_repo and leave shared_repos empty. SAM never infers the primary repo from cwd or '.'; it must be explicit.",
+      "additionalProperties": false,
+      "required": ["primary_repo"],
+      "properties": {
+        "primary_repo": {
+          "type": "object",
+          "description": "The repo that owns plans/. There is exactly one primary repo per workspace.",
+          "additionalProperties": false,
+          "required": ["name", "path", "owns_plans"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Human-readable name for the primary repo."
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Absolute or workspace-relative path to the primary repo root."
+            },
+            "owns_plans": {
+              "const": true,
+              "description": "Always true. The primary repo always owns plans/."
+            }
+          }
+        },
+        "shared_repos": {
+          "type": "array",
+          "description": "Repos that may receive code edits plus STANDARDS.md / DECISIONS.md updates (no plans/ wrapper). Omit or leave empty for single-repo projects. The path field is matched against file edits to determine shared scope.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "path", "role"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Human-readable name for the shared repo."
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Absolute or workspace-relative path to the shared repo root. Edits whose paths match this prefix are classified as shared scope."
+              },
+              "role": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Brief description of the repo's role in the workspace (e.g., 'shared backend', 'design system')."
+              }
+            }
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

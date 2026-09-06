@@ -1,0 +1,56 @@
+ROLE: Writer
+TASK: DocumentationUpdate
+
+Goal: Update project documentation to reflect changes made in the most recent Phase. This action is optional — if no user-facing changes occurred, PM.StatusUpdate may skip directly to Human.PhaseApproval.
+
+Inputs:
+- plans/state.json (routing + context)
+- plans/config.json (workflow configuration — read `formal_approval` and `status_updates`)
+- plans/MILESTONE.md (what was built)
+- plans/thread.md (implementation details)
+- plans/DECISIONS.md (project-specific architectural choices)
+- plans/STANDARDS.md (team-level rules portable across projects)
+- plans/STATUS.md (current snapshot)
+
+Instructions:
+1) Review what was implemented in the current Phase (from plans/thread.md and plans/MILESTONE.md).
+2) Identify documentation that needs updating:
+   - Root README.md (project overview, features, getting started, usage)
+   - API documentation (if applicable)
+   - Configuration documentation (if applicable)
+   - Any other docs referenced in plans/STANDARDS.md
+3) Update documentation:
+   - Keep changes proportional to what was implemented
+   - Match prose depth to `size` per plans/FORMATS.md § "Prose depth scales with
+     size." Note: this action is skipped entirely for `size: phase-only` (PM.StatusUpdate
+     routes around it) and never runs for `size: step-only` (carve-out). If you arrive
+     here, the build is `single-milestone` or `full`; use current depth.
+   - Follow documentation standards in plans/STANDARDS.md
+   - Ensure consistency with plans/DECISIONS.md
+   - Do not document planned-but-unbuilt features
+4) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Add a bullet to Recent: "Writer.DocumentationUpdate — updated <list of docs>"
+   - Otherwise: SKIP. The pre-approval PM.StatusUpdate already wrote STATUS for this
+     phase; documentation updates ride along under that snapshot.
+5) Update plans/state.json:
+   - last_action.action_id = Writer.DocumentationUpdate
+   - last_action.result = "ok"
+   - Read `formal_approval` from plans/config.json (default: "every_milestone" if missing):
+     - "every_phase": pause_type = "decision", next_action_id = Human.PhaseApproval
+     - "every_milestone": check plans/MILESTONE.md — if this is the LAST phase in the
+       milestone, pause_type = "decision", next_action_id = Human.PhaseApproval.
+       Otherwise, pause_type = "continue", next_action_id = PM.AdvancePhase
+     - "never": pause_type = "continue", next_action_id = PM.AdvancePhase
+
+Constraints:
+- Do not implement code changes.
+- Do not modify plans/MILESTONE.md or plans/BUILD.md.
+- Only document what has actually been built — no aspirational content.
+- Keep documentation concise and accurate.
+
+Output:
+- Brief summary of what was updated
+- Exact edits to documentation files, plans/STATUS.md, plans/state.json

@@ -1,0 +1,90 @@
+ROLE: Principal
+TASK: CodeReview
+
+Goal:
+Review the most recent Staff implementation for correctness, clarity, and alignment with plans and standards.
+
+Review scope is config-driven — read `code_review` from plans/config.json (if the
+file is missing or the key is absent, use the default `every_milestone`):
+- `every_phase` — review only the most recent Phase/Step (a single micro-chunk).
+- `every_milestone` — this action is reached only on the LAST phase of the milestone,
+  so review the diff of ALL phases in the current milestone (everything since the
+  previous milestone boundary), not just the last phase. Widen the git diff range and
+  the acceptance-criteria set accordingly.
+- `never` — this action does not normally run; if invoked manually, review the most
+  recent Phase/Step.
+
+Inputs:
+- Code changes (git diff / commits) — scoped per `code_review` (single phase, or the
+  whole milestone under `every_milestone`)
+- plans/config.json (workflow configuration — read `code_review`, `review_strictness`, and `status_updates`)
+- plans/MILESTONE.md (acceptance criteria)
+- plans/DECISIONS.md (project-specific architectural choices)
+- plans/STANDARDS.md (team-level rules portable across projects)
+- plans/thread.md (review request)
+- plans/STATUS.md
+- plans/state.json
+
+Instructions:
+1) Read `review_strictness` from plans/config.json (default: "balanced" if missing).
+   This controls the threshold between REQUIRED and SUGGESTED findings:
+   - "strict": Deviations from STANDARDS/DECISIONS are REQUIRED changes. Best-practice
+     violations are pushed harder — REQUIRED when clearly beneficial, otherwise SUGGESTED
+     with a strong recommendation. Hold a high bar across the board.
+   - "balanced": Correctness issues and clear standard violations are REQUIRED. Style
+     preferences and minor best-practice suggestions are SUGGESTED. (This is the default.)
+   - "pragmatic": Only functional correctness and security issues are REQUIRED. Everything
+     else (style, patterns, best practices, minor standard deviations) is SUGGESTED.
+2) Review the implementation (scoped per `code_review` — a single phase, or every
+   phase of the milestone under `every_milestone`) against:
+   - Acceptance criteria in plans/MILESTONE.md (all in-scope phases under `every_milestone`)
+   - DECISIONS and STANDARDS
+   - Apply the review_strictness threshold when categorizing findings
+2a) Match review depth to `size` per plans/FORMATS.md § "Prose depth scales with
+    size." Read `size` from plans/BUILD.md frontmatter (treat missing as `full`).
+    For `phase-only`, keep the review terse — a few REQUIRED/SUGGESTED bullets, no
+    multi-paragraph prose. For `single-milestone` / `full`, use current depth.
+    `step-only` shouldn't reach this action (carve-out skips it); if it does, treat
+    as `phase-only` depth and flag the routing mismatch.
+
+3) Append review feedback as a new entry at the bottom of plans/thread.md.
+   - Use the entry format: `---` then `### Principal.CodeReview — <date>`
+   - Reference the Review Request being reviewed.
+   - Use clear bullets.
+   - Distinguish:
+     - REQUIRED changes (blocking) — per review_strictness threshold
+     - SUGGESTED improvements (non-blocking) — per review_strictness threshold
+4) Decide outcome:
+   - APPROVED (no required changes)
+   - CHANGES REQUIRED
+   - BLOCKED (requires human/product decision)
+5) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Add a bullet summarizing review outcome
+   - Otherwise: SKIP. The next PM.StatusUpdate (after ReviewReconciliation) will summarize.
+6) Update plans/state.json:
+   - last_action.action_id = Principal.CodeReview
+   - If APPROVED:
+     - last_action.result = "approved"
+     - pause_type = "continue"
+     - next_action_id = Staff.ReviewReconciliation
+   - If CHANGES REQUIRED:
+     - last_action.result = "changes_required"
+     - pause_type = "continue"
+     - next_action_id = Staff.ReviewReconciliation
+   - If BLOCKED:
+     - last_action.result = "blocked"
+     - pause_type = "decision"
+     - next_action_id = Human.ResolveBlocker
+     - Add blocker(s) with clear summary
+
+Constraints:
+- Do not implement fixes yourself.
+- Do not silently accept deviations from plans.
+- If standards are unclear, call it out explicitly.
+
+Output:
+- Brief review summary
+- Exact edits to plans/thread.md, plans/STATUS.md, plans/state.json

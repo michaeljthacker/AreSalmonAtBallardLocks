@@ -1,0 +1,193 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAM state.json",
+  "description": "Routing source of truth for the SAM micro-chunk workflow. Tracks the current position in the BUILD → MILESTONE → PHASE → STEP hierarchy and determines which action runs next.",
+  "type": "object",
+  "required": [
+    "version",
+    "build_id",
+    "milestone_id",
+    "phase_id",
+    "step_id",
+    "pause_type",
+    "last_action",
+    "next_action_id",
+    "blockers",
+    "context"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional JSON Schema reference for editor validation."
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version of this state file.",
+      "pattern": "^\\d+\\.\\d+$",
+      "examples": ["0.2"]
+    },
+    "build_id": {
+      "type": "string",
+      "description": "Current build identifier.",
+      "pattern": "^B\\d+$",
+      "examples": ["B1", "B2"]
+    },
+    "milestone_id": {
+      "type": "string",
+      "description": "Current milestone identifier within the build.",
+      "pattern": "^M\\d+$",
+      "examples": ["M1", "M2"]
+    },
+    "phase_id": {
+      "type": ["string", "null"],
+      "description": "Current phase identifier within the milestone. Null before the first phase starts or after milestone closeout.",
+      "pattern": "^P\\d+$",
+      "examples": ["P1", "P2", null]
+    },
+    "step_id": {
+      "type": ["string", "null"],
+      "description": "Current step identifier within the phase. Null when not in an active step. Reset on phase advance and milestone closeout.",
+      "pattern": "^S\\d+$",
+      "examples": ["S1", "S2", null]
+    },
+    "pause_type": {
+      "type": "string",
+      "description": "Indicates why the workflow is paused. Every action completes and stops; this tells the human what kind of review is needed.",
+      "enum": ["continue", "decision"],
+      "x-enum-descriptions": {
+        "continue": "AI completed an action; human can review then proceed. Next action is an AI role.",
+        "decision": "A human decision is required. next_action_id will be a Human.* action."
+      }
+    },
+    "last_action": {
+      "type": "object",
+      "description": "Record of the most recently completed action.",
+      "required": ["action_id", "result", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "type": "string",
+          "description": "The Role.Task action ID that just completed.",
+          "pattern": "^(Product|Principal|Staff|PM|Writer|Human)\\.[A-Z][a-zA-Z]+$",
+          "examples": ["Staff.ImplementationExecution", "Principal.CodeReview"]
+        },
+        "result": {
+          "type": "string",
+          "description": "Outcome of the action.",
+          "enum": ["ok", "approved", "changes_required", "blocked", "error", "skipped"],
+          "x-enum-descriptions": {
+            "ok": "Action completed successfully (default for most actions).",
+            "approved": "Review action approved the artifact (BuildReview, CodeReview, PhaseApproval, ApproveMilestone).",
+            "changes_required": "Review found issues that must be addressed before proceeding.",
+            "blocked": "Action cannot proceed; a blocker has been added.",
+            "error": "Unexpected failure occurred; Human.ResolveBlocker is next.",
+            "skipped": "Action was intentionally skipped (e.g., Writer.DocumentationUpdate when no doc changes needed)."
+          }
+        },
+        "summary": {
+          "type": "string",
+          "description": "One-sentence human-readable summary of what the action did or decided.",
+          "minLength": 1,
+          "examples": [
+            "Initialized plans/ skeleton. Run Product.ProductVision to begin.",
+            "Implementation complete; all tests passing.",
+            "Code review approved with no issues."
+          ]
+        }
+      }
+    },
+    "next_action_id": {
+      "type": "string",
+      "description": "The Role.Task action ID to execute next. Must be a registered action in registry.json.",
+      "enum": [
+        "Product.ProductVision",
+        "Principal.BuildReview",
+        "Human.ApproveBuild",
+        "Principal.MilestonePlan",
+        "Human.ApproveMilestone",
+        "Staff.DraftQuestions",
+        "Principal.AnswerQuestions",
+        "Staff.ImplementationExecution",
+        "Principal.CodeReview",
+        "Staff.ReviewReconciliation",
+        "PM.StatusUpdate",
+        "Writer.DocumentationUpdate",
+        "Human.PhaseApproval",
+        "PM.AdvancePhase",
+        "PM.MilestoneCloseout",
+        "PM.ThreadMaintenance",
+        "Principal.PlanDiversion",
+        "Human.ResolveBlocker"
+      ]
+    },
+    "blockers": {
+      "type": "array",
+      "description": "Active blockers preventing normal progress. Cleared by PM.StatusUpdate or PM.MilestoneCloseout when resolved. When non-empty, next_action_id should typically be Human.ResolveBlocker.",
+      "items": {
+        "$ref": "#/$defs/blocker"
+      }
+    },
+    "context": {
+      "type": "object",
+      "description": "Lightweight routing context carried across actions. Not a substitute for thread.md — only essential state that every action needs.",
+      "required": ["goal", "notes"],
+      "additionalProperties": false,
+      "properties": {
+        "goal": {
+          "type": "string",
+          "description": "One-sentence summary of what the project is building. Set by Product.ProductVision.",
+          "examples": [
+            "<fill in: what are we building?>",
+            "A CLI tool for managing infrastructure deployments via declarative YAML configs."
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "description": "Short, durable notes that persist across actions. Keep to essentials — detailed context belongs in thread.md.",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "STATE is the routing source of truth.",
+              "STATUS must be updated every action.",
+              "Thread is active working memory; prune regularly."
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "blocker": {
+      "type": "object",
+      "description": "A blocker that prevents the workflow from proceeding normally. Created by any action that encounters an issue requiring human intervention.",
+      "required": ["id", "summary", "created_by"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique blocker identifier. Sequential within the project.",
+          "pattern": "^BLK-\\d{3}$",
+          "examples": ["BLK-001", "BLK-002"]
+        },
+        "summary": {
+          "type": "string",
+          "description": "Clear description of what is blocked and what decision or information is needed from the human.",
+          "minLength": 1,
+          "examples": [
+            "Project idea is too vague to generate a meaningful BUILD.md. Need: target users, core features, and constraints.",
+            "Tests fail on auth module — unclear whether OAuth or API key auth is intended."
+          ]
+        },
+        "created_by": {
+          "type": "string",
+          "description": "The action_id that created this blocker.",
+          "pattern": "^(Product|Principal|Staff|PM|Writer|Human)\\.[A-Z][a-zA-Z]+$",
+          "examples": ["Principal.CodeReview", "Staff.ImplementationExecution"]
+        }
+      }
+    }
+  }
+}

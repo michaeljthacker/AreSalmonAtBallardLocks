@@ -1,0 +1,120 @@
+ROLE: Product
+TASK: ProductVision
+
+Goal: Transform the human's project idea into a concrete product vision — a root README.md and plans/BUILD.md that define what is being built, why, and at what scope.
+
+This is the FIRST action in a new Build. The human has seeded their project idea as a
+**concept brief** in plans/VISION.md (or, for legacy setups, in plans/thread.md or
+verbally). Your job is to draft the foundational artifacts from that seed.
+
+Inputs:
+- plans/state.json (routing + context)
+- plans/config.json (workflow configuration — read `status_updates` for STATUS init)
+- plans/VISION.md (the concept brief — the durable seed for this Build)
+- plans/thread.md (fallback seed location + any setup context)
+
+Instructions:
+1) Read plans/VISION.md for the human's concept brief — this is the primary seed for
+   the Build. If VISION.md is empty or absent (legacy setups), fall back to plans/thread.md
+   for the project idea. Look for enough context to draft the artifacts:
+   - A one-sentence project goal
+   - A Build B1 short name or description
+   - A Milestone M1 goal
+   If any of these are missing and cannot be inferred from the provided material,
+   set last_action.result = "blocked", pause_type = "decision",
+   next_action_id = Human.ResolveBlocker,
+   and add a blocker requesting the missing information.
+   **Do NOT modify plans/VISION.md** — it is the human-owned concept brief and is left
+   untouched, for future reference. Read from it; never write to it.
+2) Determine build `size` (recorded in BUILD.md frontmatter — see plans/FORMATS.md):
+   - First, scan plans/VISION.md (then plans/thread.md) for an explicit hint. Accept
+     either an explicit `size: <value>` line OR natural-language signals such as "patch",
+     "small fix", "dependency bump", "small feature", "full prototype", "MVP", "major
+     build". If the human stated a size, respect it.
+   - If no hint, infer from the project scope using these definitions:
+     - `full` — multi-milestone work (2+ milestones, typical 3+). Full prototype or major feature.
+     - `single-milestone` — substantial feature, single milestone, multiple phases.
+     - `phase-only` — small feature; exactly one phase, multiple steps.
+     - `step-only` — **not a build.** Cursory look, brief human check, implement.
+       Pick this when the change is mechanical, well-scoped, and the build process
+       would cost more than the work itself (patches, dependency bumps, small fixes,
+       wiring an existing library into a consumer). The signal is *intent and risk*,
+       not step count — a 5-edit mechanical wire-up is `step-only`; a 2-step feature
+       that needs design questions is `phase-only`.
+   - If genuinely ambiguous, prefer the smaller size; the human can grow it at
+     Human.ApproveBuild or via Principal.PlanDiversion.
+3) Generate the root README.md:
+   - Project name and one-line description
+   - What the project does (2–4 sentences)
+   - Key features / capabilities (bullet list)
+   - Tech stack (if determinable from the idea)
+   - Getting started placeholder
+   - Keep it concise — this is a living document that will be refined
+4) Generate plans/BUILD.md. Match prose depth to `size` per FORMATS.md
+   § "Prose depth scales with size" — an over-detailed BUILD.md for a small size is
+   a defect.
+   - **If `size: step-only`** — write the minimal BUILD.md only:
+     ```
+     ---
+     size: step-only
+     ---
+     # BUILD — <Build ID>
+
+     <One-line goal>
+     ```
+     Do NOT add Purpose, Scope, Success criteria, Milestones, or Risks sections.
+     The single line under the heading IS the Build. The carve-out route
+     (Human.ApproveBuild → Staff.QuickImplement) reads this line plus VISION.md /
+     thread.md; it does not need prototype-grade framing.
+   - **Otherwise** — full BUILD.md:
+     - Frontmatter at the top: `---\nsize: <chosen size>\n---`
+     - Fill in the Build ID (from state.json, typically B1)
+     - Purpose: what is being built and why
+     - Scope: in-scope and out-of-scope items
+     - Success criteria: measurable outcomes
+     - Milestones — count must match the declared `size`:
+       - `full`: propose M1, M2, … (typically 3+)
+       - `single-milestone` / `phase-only`: propose exactly one milestone (M1)
+     - Risks / assumptions
+     - For `phase-only` / `single-milestone`, keep prose terse — a short paragraph
+       (or a few bullets) per section, scoped to the one milestone.
+5) Initialize plans/STATUS.md (this action always creates the file — it is the
+   one unconditional STATUS write in the lifecycle):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "never"`: write the disabled stub and stop:
+     ```
+     # STATUS
+
+     _(STATUS updates disabled via config: status_updates=never)_
+     ```
+   - Otherwise, write the normal initial snapshot:
+     - Top: `**Update configuration:** ` + the current `status_updates` value
+     - Now section: Build ID, Milestone M1, no Phase yet
+     - Blockers: None
+     - Recent: "Product.ProductVision completed — README.md and BUILD.md drafted"
+     - Next: "Principal.BuildReview to validate feasibility"
+6) Update plans/state.json:
+   - last_action.action_id = Product.ProductVision
+   - last_action.result = "ok"
+   - **If `size: step-only`** — route directly to Human.ApproveBuild (the carve-out
+     skips Principal.BuildReview):
+     - next_action_id = Human.ApproveBuild
+     - pause_type = "decision"
+   - **Otherwise** — standard chain:
+     - next_action_id = Principal.BuildReview
+     - pause_type = "continue"
+   - Update context.goal with a one-sentence summary of the project
+
+Constraints:
+- Do not implement any code.
+- Do not modify plans/VISION.md — it is the human-owned concept brief, read-only to actions.
+- Do not create plans/MILESTONE.md (that is Principal.MilestonePlan's job).
+- Keep the README and BUILD concise — they will be reviewed and refined.
+- BUILD.md frontmatter MUST include a valid `size` value (`full`, `single-milestone`, `phase-only`, or `step-only`).
+- The milestone count in BUILD.md MUST match the declared size (one milestone for everything except `full`).
+- For `size: step-only`, the BUILD.md is intentionally minimal (no Scope/Success/Risks/Milestones sections); the carve-out route handles the rest.
+- If the project idea is too vague to produce meaningful artifacts, set last_action.result = "blocked", pause_type = "decision", next_action_id = Human.ResolveBlocker, and add a blocker asking for clarification.
+
+Output:
+- Brief summary of what was generated
+- Exact content for README.md, plans/BUILD.md, plans/STATUS.md, plans/state.json

@@ -1,0 +1,88 @@
+ACTION: Human.PhaseApproval
+TYPE: Human-required (non-executable)
+
+This action indicates the workflow is PAUSED for the human to review and approve the completed Phase.
+
+Your role as AI is NOT to approve the Phase.
+Your role is to PREPARE a clear briefing so the human can review and decide.
+
+Do NOT:
+- Approve the Phase on the human's behalf
+- Make scope or quality decisions
+- Advance to the next Phase
+- Update plans/state.json as if approved
+
+Do:
+- Summarize what was implemented
+- Present the acceptance criteria checklist
+- Point to exact files and sections to review
+- Specify what the human must update afterward
+
+Inputs:
+- plans/state.json
+- plans/config.json (workflow configuration — read `formal_approval` and `status_updates`)
+- plans/STATUS.md
+- plans/thread.md (implementation details, review results)
+- plans/MILESTONE.md (acceptance criteria for this Phase)
+
+Determine the approval scope (read `formal_approval` from plans/config.json; if
+config.json is missing or the key is absent, use the default `every_milestone`):
+- `every_phase` — this gate approves the single current Phase. Brief the current
+  Phase only (the default, phase-scoped briefing below).
+- `every_milestone` — this gate is reached only on the LAST phase of the milestone,
+  so it is really a MILESTONE approval. Brief the ENTIRE milestone: every phase since
+  the last approval, not just the final phase. Frame the briefing as a milestone
+  approval ("Milestone Approval Required") and cover each phase's work.
+- `never` — this action does not normally run; if invoked manually, brief the current
+  Phase.
+
+Instructions:
+1) Identify the current Phase (and, under `every_milestone`, the current Milestone and
+   all its phases) from plans/state.json and plans/MILESTONE.md.
+2) Read plans/MILESTONE.md and extract the acceptance criteria for the in-scope
+   Phase(s) — a single phase under `every_phase`, all phases of the milestone under
+   `every_milestone`.
+3) Summarize (per in-scope phase under `every_milestone`; otherwise for the one phase):
+   - What was implemented (from thread.md / STATUS.md)
+   - Review outcome (from thread.md — was it APPROVED by Principal?)
+   - Key files changed
+4) Present acceptance criteria as a checklist for human verification (covering every
+   in-scope phase under `every_milestone`).
+5) Produce a "Human Action Checklist":
+   - Review the implementation (test manually if needed)
+   - Verify acceptance criteria
+   - If approved: update plans/state.json:
+     - last_action = Human.PhaseApproval
+     - last_action.result = "approved"
+     - next_action_id = PM.AdvancePhase
+     - pause_type = "continue"
+     - STATUS.md write (config-gated): read `status_updates` from plans/config.json
+       (default: "pm_only" if missing):
+       - If `status_updates = "every_action"`: refresh `**Update configuration:**`
+         line; add a Recent bullet noting Phase approval.
+       - Otherwise: SKIP. The pre-approval PM.StatusUpdate already captured the
+         phase-end snapshot — re-writing here would be redundant. (No reroute through
+         PM.StatusUpdate for this action.)
+   - Commit if not already committed
+     - **NEVER prefix commit messages with `--AUTO-`.** That prefix is reserved
+       exclusively for automated SAM commits made by `plans/commit.ps1`; a manual
+       commit that carries it corrupts the organic-vs-automated distinction in
+       `git log`. Write a plain, human-readable subject.
+         ✅ good:  `Approve phase: search results pagination`
+         ❌ WRONG: `--AUTO-B2-M1-P2-Human.PhaseApproval: approve pagination`
+   - If changes needed: update plans/state.json:
+     - last_action.result = "changes_required"
+     - next_action_id = Staff.ReviewReconciliation (or Staff.ImplementationExecution)
+     - Add feedback to plans/thread.md
+     - STATUS.md write: same gating — `every_action` writes a Recent bullet; otherwise skip.
+
+Output format:
+- A short briefing titled "Phase Approval Required" (or "Milestone Approval Required"
+  when `formal_approval = every_milestone`)
+- Summary of implementation and review status
+- Acceptance criteria checklist
+- A checklist the human can follow
+- Suggested state.json updates for each possible decision
+
+Stop after producing the briefing.
+Do NOT attempt to continue the workflow.

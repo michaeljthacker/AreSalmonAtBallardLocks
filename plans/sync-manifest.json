@@ -1,0 +1,60 @@
+{
+  "$schema_comment": "Manifest for plans/sam-update.py. Two file lists plus a deploy_mappings table. system_files are copied from a source SAM template into the target project. instance_files are NOT copied from the source — they hold target-owned state. The script never edits instance content authored by the project; the only target-owned file the script writes is plans/.sam-version, stamped on --apply via the stamp_version() helper (not via the copy loop). deploy_mappings handle system files that land outside plans/ (e.g., copilot-instructions.md → .github/copilot-instructions.md, CLAUDE.md → project root).",
+  "version": "1.7.0",
+
+  "system_files": [
+    "plans/README.md",
+    "plans/FORMATS.md",
+    "plans/agent-instructions.md",
+    "plans/copilot-instructions.md",
+    "plans/CLAUDE.md",
+    "plans/config.schema.json",
+    "plans/state.schema.json",
+    "plans/templates/registry.json",
+    "plans/templates/Human_ApproveBuild.txt",
+    "plans/templates/Human_ApproveMilestone.txt",
+    "plans/templates/Human_PhaseApproval.txt",
+    "plans/templates/Human_ResolveBlocker.txt",
+    "plans/templates/PM_AdvancePhase.txt",
+    "plans/templates/PM_MilestoneCloseout.txt",
+    "plans/templates/PM_StatusUpdate.txt",
+    "plans/templates/PM_ThreadMaintenance.txt",
+    "plans/templates/Principal_AnswerQuestions.txt",
+    "plans/templates/Principal_BuildReview.txt",
+    "plans/templates/Principal_CodeReview.txt",
+    "plans/templates/Principal_MilestonePlan.txt",
+    "plans/templates/Principal_PlanDiversion.txt",
+    "plans/templates/Product_ProductVision.txt",
+    "plans/templates/Staff_DraftQuestions.txt",
+    "plans/templates/Staff_ImplementationExecution.txt",
+    "plans/templates/Staff_QuickImplement.txt",
+    "plans/templates/Staff_ReviewReconciliation.txt",
+    "plans/templates/Writer_DocumentationUpdate.txt",
+    "plans/next.ps1",
+    "plans/status.ps1",
+    "plans/commit.ps1",
+    "plans/sam-update.py",
+    "plans/sync-manifest.json"
+  ],
+
+  "instance_files": [
+    "plans/config.json",
+    "plans/VISION.md",
+    "plans/BUILD.md",
+    "plans/MILESTONE.md",
+    "plans/STATUS.md",
+    "plans/BACKLOG.md",
+    "plans/CHANGELOG.md",
+    "plans/DECISIONS.md",
+    "plans/STANDARDS.md",
+    "plans/thread.md",
+    "plans/state.json",
+    "plans/.sam-version",
+    "plans/thread.archive.md"
+  ],
+
+  "deploy_mappings": [
+    { "source": "plans/copilot-instructions.md", "target": ".github/copilot-instructions.md" },
+    { "source": "plans/CLAUDE.md",               "target": "CLAUDE.md" }
+  ]
+}

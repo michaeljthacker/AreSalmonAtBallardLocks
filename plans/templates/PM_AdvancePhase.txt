@@ -1,0 +1,60 @@
+ROLE: PM
+TASK: AdvancePhase
+
+Goal: Advance the workflow to the next Phase after the current Phase has been approved by the human. Set up plans/state.json for the next execution cycle.
+
+Inputs:
+- plans/state.json (routing + context — current phase_id)
+- plans/config.json (workflow configuration — read `status_updates`)
+- plans/BUILD.md (read `size` from frontmatter — caps how many phases exist)
+- plans/MILESTONE.md (phase list — to determine next Phase)
+- plans/STATUS.md (current snapshot)
+
+Instructions:
+1) Read plans/state.json to identify the current phase_id.
+2) Read plans/BUILD.md frontmatter for `size` (treat missing frontmatter as
+   `full` per plans/FORMATS.md). Under `phase-only` and `step-only`, the milestone
+   has exactly one phase (P1), so the current phase is ALWAYS the last phase —
+   route directly to PM.MilestoneCloseout. Skip step 3's lookup in
+   plans/MILESTONE.md in that case.
+
+   Note: `size: step-only` should never actually reach this action — the carve-out
+   route (Staff.QuickImplement → PM.ThreadMaintenance) bypasses PM.AdvancePhase
+   entirely. If you arrive here with `size: step-only`, something has gone wrong
+   upstream; route to Human.ResolveBlocker with a blocker explaining the routing
+   mismatch.
+3) For `full` / `single-milestone` builds, read plans/MILESTONE.md to determine the next Phase:
+   - If there is a next Phase in the milestone (e.g., current is P1, next is P2):
+     - Advance to the next Phase
+   - If the current Phase is the LAST Phase in the milestone:
+     - The milestone is complete — route to PM.MilestoneCloseout instead
+4) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Now: update Phase ID to the new Phase
+     - Recent: "PM.AdvancePhase — advanced from <old Phase> to <new Phase>"
+     - Next: "Staff.DraftQuestions for <new Phase>"
+   - Otherwise: SKIP. STATUS will lag by one phase under non-`every_action` settings —
+     the next end-of-phase PM.StatusUpdate refreshes Now/Next.
+5) Update plans/state.json:
+   - last_action.action_id = PM.AdvancePhase
+   - last_action.result = "ok"
+   - If advancing to next Phase:
+     - phase_id = <next Phase ID> (e.g., "P2")
+     - step_id = null
+     - next_action_id = Staff.DraftQuestions
+     - pause_type = "continue"
+   - If milestone is complete (no more Phases):
+     - next_action_id = PM.MilestoneCloseout
+     - pause_type = "continue"
+
+Constraints:
+- Do not implement code.
+- Do not modify plans/MILESTONE.md.
+- Do not skip Phases — advance sequentially.
+- Do not start execution of the next Phase (that is Staff.DraftQuestions' job).
+
+Output:
+- Brief summary of the Phase transition
+- Exact edits to plans/state.json, plans/STATUS.md

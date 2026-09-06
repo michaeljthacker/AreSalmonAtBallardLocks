@@ -1,0 +1,112 @@
+ROLE: Staff
+TASK: QuickImplement
+
+Goal:
+Implement, self-verify, and close out a `size: step-only` build in one action. This is the carve-out path for "not a build" work — small fixes, dependency bumps, mechanical edits — where the standard build process would cost more than the work itself.
+
+This action ONLY runs for `size: step-only` builds. It is reached from Human.ApproveBuild and ends the Build (no MilestonePlan, no per-phase loop, no MilestoneCloseout). If you arrive here with a non-step-only BUILD.md, STOP and route to Human.ResolveBlocker — something has gone wrong.
+
+Inputs:
+- plans/state.json (routing + context)
+- plans/config.json (workflow configuration — read `workspace` and `status_updates`)
+- plans/BUILD.md (the minimal step-only Build — title, one-line goal, `size: step-only`)
+- plans/VISION.md (the concept brief — the human's original request; the real spec for a step-only build. Read-only — never modify it)
+- plans/thread.md (any ApproveBuild notes and setup context)
+- plans/DECISIONS.md (project-specific architectural choices)
+- plans/STANDARDS.md (team-level rules portable across projects)
+- plans/STATUS.md (current snapshot)
+
+Instructions:
+1) Verify size. Read `size` from plans/BUILD.md frontmatter. If it is not `step-only`,
+   set last_action.result = "blocked", pause_type = "decision",
+   next_action_id = Human.ResolveBlocker, and add a blocker noting that
+   Staff.QuickImplement was reached with a non-step-only build (routing bug).
+   Do not implement code in that case.
+
+2) Scope check (cursory). Before editing, look briefly at the request and the
+   surrounding code (a few greps / file reads). If you discover that the change is
+   actually larger than `step-only` allows — needs multiple phases, multiple
+   milestones, or genuine design questions — STOP and route to
+   Principal.PlanDiversion instead of implementing. Set:
+   - last_action.result = "ok"
+   - pause_type = "decision"
+   - next_action_id = Principal.PlanDiversion
+   - Append a thread.md entry explaining what you found and why the size should grow.
+   Principal.PlanDiversion will resize the build and reroute through Human.ApproveBuild
+   into the standard chain.
+
+3) Implement the change.
+   - Follow the request in plans/BUILD.md and plans/thread.md.
+   - Respect DECISIONS and STANDARDS.
+   - Multi-root workspaces: read `workspace.shared_repos` from plans/config.json. Code
+     edits inside a `shared_repos[].path` are shared scope and allowed. Do NOT create
+     or modify a `plans/` directory inside a shared repo. Do NOT write to a shared
+     repo's STANDARDS.md or DECISIONS.md from this action.
+   - Match prose depth to `size` per FORMATS.md § "Prose depth scales with size."
+     For step-only, written artifacts stay minimal — title + one-line note, no
+     prototype-grade prose.
+
+4) Self-verify.
+   - Run whatever check is appropriate (type-check, lint, smoke test, manual exercise
+     of the path that changed). The formal Principal.CodeReview action is intentionally
+     skipped on this path, but the *act* of verifying is not.
+   - If verification fails: fix it, do not punt to a review step. If you cannot fix
+     it, set last_action.result = "blocked", pause_type = "decision",
+     next_action_id = Human.ResolveBlocker, and add a blocker.
+
+5) Commit your work.
+   - **NEVER prefix commit messages with `--AUTO-`.** That prefix is reserved
+     exclusively for automated SAM commits made by `plans/commit.ps1`; a manual
+     commit that carries it corrupts the organic-vs-automated distinction in
+     `git log`. Write a plain, human-readable subject describing the change.
+       ✅ good:  `Bump lodash to 4.17.21 (security patch)`
+       ❌ WRONG: `--AUTO-B3-Staff.QuickImplement: bump lodash`
+   - Minimum: ≥1 commit.
+   - Shared-repo code edits commit inside the shared repo using its own conventions.
+
+6) Optional CHANGELOG line.
+   - If plans/CHANGELOG.md exists, append one short bullet under "Unreleased"
+     describing the change. One line, not a paragraph.
+   - If the repo has no CHANGELOG, skip this step.
+
+7) Append a brief thread.md entry at the bottom:
+   - Use the entry format: `---` then `### Staff.QuickImplement — <date>`
+   - One short paragraph: what was changed, key files touched, verification performed.
+   - Match step-only depth: a few sentences, not a review request.
+
+8) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Now: clear Phase ID (build complete)
+     - Recent: "Staff.QuickImplement — <one-line summary>"
+     - Next: "Build complete"
+   - Otherwise: SKIP. PM.ThreadMaintenance (next action) will refresh STATUS as
+     part of build-close cleanup.
+
+9) Update plans/state.json to close the Build:
+   - last_action.action_id = Staff.QuickImplement
+   - last_action.result = "ok"
+   - phase_id = null
+   - step_id = null
+   - next_action_id = PM.ThreadMaintenance
+   - pause_type = "continue"
+   - Add context note: "Build complete after ThreadMaintenance"
+
+   This matches the end-of-build routing used by PM.MilestoneCloseout for the other
+   sizes — PM.ThreadMaintenance gets the last word so any decisions worth keeping
+   are promoted before the Build closes.
+
+Constraints:
+- Do not run Principal.BuildReview, Principal.MilestonePlan, Principal.CodeReview,
+  Staff.ReviewReconciliation, Writer.DocumentationUpdate, Human.PhaseApproval,
+  PM.AdvancePhase, or PM.MilestoneCloseout. The carve-out skips them deliberately.
+- Do not produce prototype-grade artifacts. Step-only prose stays minimal.
+- Do not run on a non-step-only build (step 1 guards this).
+- Do not advance to another phase or milestone — there is only one.
+
+Output:
+- Brief summary of what was changed
+- Commit(s)
+- Optional CHANGELOG line
+- Exact edits to plans/thread.md, plans/STATUS.md, plans/state.json

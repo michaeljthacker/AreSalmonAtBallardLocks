@@ -1,0 +1,71 @@
+ROLE: PM
+TASK: MilestoneCloseout
+
+Goal: Close out the current milestone — update project tracking artifacts, archive the milestone's thread content, and set up routing for the next milestone or end of Build.
+
+Inputs:
+- plans/state.json (routing + context)
+- plans/config.json (workflow configuration — read `status_updates`)
+- plans/BUILD.md (read `size` from frontmatter — determines whether this milestone ends the Build)
+- plans/MILESTONE.md (completed milestone)
+- plans/STATUS.md (current snapshot)
+- plans/BACKLOG.md (pending work)
+- plans/CHANGELOG.md (change history)
+- plans/thread.md (active working memory)
+
+Instructions:
+1) Verify all Phases in plans/MILESTONE.md are complete (cross-reference with STATUS.md).
+2) Update plans/CHANGELOG.md:
+   - Append a milestone summary entry under "Unreleased": "Milestone <ID> complete — <goal>"
+   - Do NOT move items from "Unreleased" to "Released". Milestones are *completed*,
+     not released. The "Unreleased" → "Released" move belongs to BUILD release
+     (when/if that action exists), not milestone closeout.
+3) Update plans/BACKLOG.md:
+   - Remove items completed during this milestone
+   - Carry forward unresolved items
+   - Add any deferred work discovered during the milestone
+   - BACKLOG is for future work only — do not add in-progress tasks or implementation details
+4) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Now: clear Phase ID (milestone complete)
+     - Recent: "PM.MilestoneCloseout — <Milestone ID> closed"
+     - Blockers: clear milestone-specific blockers
+     - Next: indicate whether another milestone follows or Build is complete
+   - Otherwise: SKIP. The end-of-last-phase PM.StatusUpdate already wrote a snapshot;
+     the next PM.StatusUpdate (after Human.ApproveMilestone for the new milestone)
+     will catch STATUS up to the new position.
+5) Determine whether this milestone ends the Build:
+   - Read `size` from plans/BUILD.md frontmatter (treat missing frontmatter as
+     `full` per plans/FORMATS.md).
+   - If `size` ∈ {`step-only`, `phase-only`, `single-milestone`}: the Build has
+     exactly one milestone, so completing M1 also ends the Build. Skip the
+     "next milestone" branch below.
+   - Else (`full`): consult plans/BUILD.md's Milestones list as today.
+6) Update plans/state.json:
+   - last_action.action_id = PM.MilestoneCloseout
+   - last_action.result = "ok"
+   - phase_id = null
+   - step_id = null
+   - If there is a next milestone in plans/BUILD.md (only possible under `size: full`):
+     - milestone_id = <next Milestone ID> (e.g., "M2")
+     - next_action_id = PM.ThreadMaintenance
+     - pause_type = "continue"
+   - If this was the final milestone in the Build (always the case for non-`full` sizes):
+     - next_action_id = PM.ThreadMaintenance
+     - pause_type = "continue"
+     - Add a context note: "Build complete after ThreadMaintenance"
+7) Trigger thread cleanup:
+   - PM.ThreadMaintenance will run next to prune resolved content
+     and promote durable decisions before the next milestone begins
+
+Constraints:
+- Do not implement code.
+- Do not start the next milestone (that is Principal.MilestonePlan's job, after ThreadMaintenance).
+- Do not modify plans/MILESTONE.md (it is now a historical record of the completed milestone).
+- Do not delete plans/MILESTONE.md — it will be overwritten by Principal.MilestonePlan for the next milestone.
+
+Output:
+- Brief summary of the closeout
+- Exact edits to plans/STATUS.md, plans/BACKLOG.md, plans/CHANGELOG.md, plans/state.json

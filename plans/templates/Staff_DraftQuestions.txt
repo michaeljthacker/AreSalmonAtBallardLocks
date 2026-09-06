@@ -1,0 +1,53 @@
+ROLE: Staff
+TASK: DraftQuestions
+
+Goal: Draft only the questions needed before implementing the next concrete slice of work.
+
+Inputs:
+- plans/state.json (routing + context)
+- plans/config.json (workflow configuration — read `status_updates`)
+- plans/MILESTONE.md (plan + acceptance criteria)
+- plans/DECISIONS.md (project-specific architectural choices) and plans/STANDARDS.md (team-level rules portable across projects)
+- plans/thread.md (current active thread)
+- plans/STATUS.md (current snapshot)
+
+Instructions:
+1) Identify the exact next execution unit (Phase/Step) implied by plans/state.json + plans/MILESTONE.md.
+2) Assess whether you have meaningful questions. Review plans/MILESTONE.md, plans/DECISIONS.md,
+   plans/STANDARDS.md, and plans/thread.md — if the path forward is clear and you have no
+   blocking or important questions:
+   - SELF-SKIP: Do not append an entry to plans/thread.md.
+   - STATUS.md write (config-gated): if `status_updates = "every_action"`, refresh
+     the `**Update configuration:**` line and add a Recent bullet
+     "Staff.DraftQuestions — skipped (path is clear)". Otherwise SKIP.
+   - Update plans/state.json:
+     - last_action = Staff.DraftQuestions, result = "skipped"
+     - next_action_id = Staff.ImplementationExecution
+     - pause_type = "continue"
+   - Stop here.
+3) If you DO have questions, append a new entry at the bottom of plans/thread.md with your questions.
+   - Use the entry format: `---` then `### Staff.DraftQuestions — <date>`
+   - Use IDs: Q-###.
+   - Mark Blocking: Yes/No.
+   - Keep questions specific and decision-oriented (avoid essays).
+4) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Add a bullet to Recent describing that questions were drafted
+     - Update Blockers section (brief)
+   - Otherwise: SKIP. The next PM.StatusUpdate will reflect this in summary.
+5) Update plans/state.json:
+   - last_action.action_id = Staff.DraftQuestions
+   - last_action.result = "ok"
+   - next_action_id = Principal.AnswerQuestions
+   - pause_type = "continue"
+   - If you believe a human product decision is required: last_action.result = "blocked", pause_type = "decision", next_action_id = Human.ResolveBlocker, add a blocker
+
+Constraints:
+- Do not implement code.
+- Do not rewrite plans/MILESTONE.md unless explicitly instructed by that plan.
+
+Output:
+- Brief summary
+- Exact edits/patches for thread.md, STATUS.md, state.json

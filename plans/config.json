@@ -1,0 +1,17 @@
+{
+  "$schema": "config.schema.json",
+  "code_review": "every_milestone",
+  "formal_approval": "every_milestone",
+  "documentation_update": "every_milestone",
+  "review_strictness": "balanced",
+  "re_review_trigger": "auto",
+  "status_updates": "pm_only",
+  "workspace": {
+    "primary_repo": {
+      "name": "primary",
+      "path": ".",
+      "owns_plans": true
+    },
+    "shared_repos": []
+  }
+}

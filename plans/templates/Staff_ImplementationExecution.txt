@@ -1,0 +1,93 @@
+ROLE: Staff
+TASK: ImplementationExecution
+
+Goal:
+Implement the next concrete execution unit (Phase or Step) as defined by:
+- plans/state.json
+- plans/MILESTONE.md
+- answers and constraints in plans/thread.md
+
+This is a SINGLE micro-chunk of execution, not an entire milestone.
+
+Inputs:
+- plans/state.json (routing + context)
+- plans/config.json (workflow configuration — read `code_review`, `workspace`, and `status_updates`)
+- plans/MILESTONE.md (what to build, acceptance criteria)
+- plans/thread.md (answers to questions; constraints)
+- plans/DECISIONS.md (project-specific architectural choices)
+- plans/STANDARDS.md (team-level rules portable across projects)
+- plans/STATUS.md (current snapshot)
+
+Instructions:
+1) Identify the exact execution unit to implement:
+   - Phase ID (required)
+   - Step ID (if specified)
+2) Implement the work in code.
+   - Follow plans/MILESTONE.md strictly.
+   - Respect DECISIONS and STANDARDS.
+   - Multi-root workspaces: read `workspace.shared_repos` from plans/config.json.
+     Code edits inside a `shared_repos[].path` are **shared scope** and are allowed.
+     Do NOT create or modify a `plans/` directory inside a shared repo. Do NOT write
+     to a shared repo's STANDARDS.md or DECISIONS.md from this action — that path
+     goes through PM.ThreadMaintenance with explicit human approval. If the review
+     uncovers a finding that genuinely belongs in shared standards, capture it in the
+     primary repo's plans/DECISIONS.md or plans/STANDARDS.md and let the promotion
+     protocol handle it.
+3) Commit your work.
+   - **NEVER prefix commit messages with `--AUTO-`.** That prefix is reserved
+     exclusively for automated SAM commits made by `plans/commit.ps1`; a manual
+     commit that carries it corrupts the organic-vs-automated distinction in
+     `git log`. Write a plain, human-readable subject describing the change.
+       ✅ good:  `Add password reset to the login flow`
+       ❌ WRONG: `--AUTO-B2-M1-P2-Staff.ImplementationExecution: add password reset`
+   - Minimum: ≥1 commit per Phase.
+   - More commits allowed if complexity warrants.
+   - Shared-repo code edits commit inside the shared repo using its own conventions.
+4) Append a review request entry at the bottom of plans/thread.md:
+   - Use the entry format: `---` then `### Staff.ImplementationExecution — <date>`
+   - Title within entry: "Review Request — <Phase ID>"
+   - Include:
+     - What was implemented
+     - Key files changed (for any file inside a `workspace.shared_repos[].path`,
+       prefix the bullet with "shared scope (<repo name>):" so the workspace
+       boundary is visible in the log)
+     - Acceptance criteria checklist
+     - Any known risks or trade-offs
+5) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Add a bullet to Recent describing what was implemented
+     - Update Blockers if any emerged
+   - Otherwise: SKIP. The next PM.StatusUpdate will summarize the implementation.
+6) Update plans/state.json:
+   - last_action.action_id = Staff.ImplementationExecution
+   - If implementation is complete and ready for review:
+     - last_action.result = "ok"
+     - Read `code_review` from plans/config.json (default: "every_milestone" if missing):
+       - "every_phase": pause_type = "continue", next_action_id = Principal.CodeReview
+       - "every_milestone": check plans/MILESTONE.md — if this is the LAST phase in the
+         milestone, pause_type = "continue", next_action_id = Principal.CodeReview.
+         Otherwise, pause_type = "continue", next_action_id = PM.StatusUpdate
+       - "never": pause_type = "continue", next_action_id = PM.StatusUpdate
+   - If you discover missing information or ambiguity:
+     - last_action.result = "ok"
+     - pause_type = "continue"
+     - next_action_id = Principal.AnswerQuestions
+     - Add questions to plans/thread.md
+   - If a product decision is required:
+     - last_action.result = "blocked"
+     - pause_type = "decision"
+     - next_action_id = Human.ResolveBlocker
+     - Add a blocker to plans/state.json and details to plans/thread.md
+
+Constraints:
+- Do not review your own code.
+- Do not advance to the next Phase.
+- Do not modify plans/MILESTONE.md unless explicitly allowed.
+- Keep thread additions concise and actionable.
+
+Output:
+- Brief summary of what was implemented
+- Commit(s)
+- Exact edits to plans/thread.md, plans/STATUS.md, plans/state.json

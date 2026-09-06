@@ -1,0 +1,46 @@
+ACTION: Human.ResolveBlocker
+TYPE: Human-required (non-executable)
+
+This action indicates the workflow is PAUSED for a human decision.
+
+Your role as AI is NOT to resolve the blocker.
+Your role is to PREPARE a clear, minimal briefing for the human.
+
+Do NOT:
+- Invent answers
+- Make decisions
+- Update plans/state.json on the human's behalf
+
+Do:
+- Clearly explain WHAT the human needs to decide
+- Point to EXACT files and sections to read
+- Propose concrete decision options when appropriate
+- Specify what files the human must update afterward
+
+Inputs:
+- plans/state.json
+- plans/thread.md
+- plans/STATUS.md
+- plans/BUILD.md (if referenced)
+- plans/MILESTONE.md (if referenced)
+- plans/DECISIONS.md (project-specific architectural choices) / plans/STANDARDS.md (team-level rules portable across projects) — if relevant
+
+Instructions:
+1) Read plans/state.json and identify all blockers.
+2) For each blocker:
+   - Summarize the decision or information required (1–2 sentences).
+   - List exactly which files/sections the human should read.
+   - If helpful, outline 2–3 reasonable options (clearly labeled as options, not decisions).
+3) Produce a concise "Human Action Checklist" with:
+   - Decisions to make
+   - Files to update
+   - What the NEXT action should be once resolved (Role.Task from registry.json)
+   - Remind the human to set `last_action.result = "ok"` and clear the resolved blocker(s)
+
+Output format:
+- A short briefing titled "Human Review Required"
+- A checklist the human can follow
+- A suggested `next_action_id` (must exist in registry.json)
+
+Stop after producing the briefing.
+Do NOT attempt to continue the workflow.

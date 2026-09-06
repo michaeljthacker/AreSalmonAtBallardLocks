@@ -1,0 +1,83 @@
+ROLE: Principal
+TASK: AnswerQuestions
+
+Goal: Answer open questions in plans/thread.md so Staff can implement the next slice safely and consistently.
+
+Inputs:
+- plans/thread.md (questions)
+- plans/config.json (workspace.shared_repos for scope routing; `status_updates` for STATUS gating)
+- plans/MILESTONE.md (plan + acceptance criteria)
+- plans/DECISIONS.md (project-specific architectural choices) and plans/STANDARDS.md (team-level rules portable across projects)
+- plans/STATUS.md (snapshot)
+- plans/state.json (routing)
+
+Instructions:
+1) Append a new entry at the bottom of plans/thread.md answering each open question by Q-### ID.
+   - Use the entry format: `---` then `### Principal.AnswerQuestions — <date>`
+   - Answer concisely. Do not modify or delete previous entries.
+2) Promote durable decisions (always to the primary repo):
+   - **Before recording, classify** each candidate as one of:
+       (a) `implementation detail` — local code structure, one-off tradeoff with no
+           long-term relevance. Do NOT record in DECISIONS.md or STANDARDS.md.
+           Capture in plans/MILESTONE.md or plans/thread.md if it needs to be remembered
+           at all.
+       (b) `project decision` — durable, project-specific choice ("going forward in this
+           project, we will always…"). Record in the primary repo's plans/DECISIONS.md.
+       (c) `shared/platform standard` — a rule that would apply to any project using
+           the same shared code or shared platform. Record in the primary repo's
+           plans/STANDARDS.md (NOT a shared repo — promotion to a shared repo is handled
+           later by PM.ThreadMaintenance with explicit human approval).
+     Do NOT write the bucket label into DECISIONS.md / STANDARDS.md — the classification
+     is a decision-making heuristic, not metadata to persist.
+   - **Record only if future work would benefit from knowing the rationale.** Apply
+     these checks before writing an entry:
+       - Will this matter in 3 months?
+       - Does it affect multiple features or systems?
+       - Is there a non-obvious rationale worth preserving?
+     If you can't say "yes" to at least one, do not record it.
+   - **Every DECISIONS/STANDARDS entry MUST include a `**Why this matters long-term:**`
+     line** capturing the rationale. If you can't write a meaningful one, the entry
+     doesn't belong there. See plans/FORMATS.md for the entry format.
+   - If it is only a milestone detail, ensure it is reflected in plans/MILESTONE.md (brief).
+   - Project-scoped decisions *about* shared code stay in the primary repo's
+     plans/DECISIONS.md. Do NOT write directly to any shared repo's STANDARDS.md or
+     DECISIONS.md from this action — promotion to a shared repo is handled later by
+     PM.ThreadMaintenance with explicit human approval. (See workspace.shared_repos in
+     plans/config.json and the promotion protocol in PM_ThreadMaintenance.txt.)
+3) Keep plans/thread.md small by being concise in your answers.
+   Resolved questions will be compressed by PM.ThreadMaintenance later.
+3a) **Engineering judgment.** When an answer involves a non-trivial capability
+    (auth, payments, email, analytics, search, file storage, observability,
+    real-time, background jobs, etc.) or any architectural choice, apply these
+    checks before committing to a recommendation:
+    - **Buy vs. build:** is there a managed service or established OSS option
+      that would solve this better than custom code? If you're recommending
+      build-from-scratch, note *why* in the answer.
+    - **One-way doors:** is this choice hard to reverse (data model, vendor
+      lock-in, license, platform, protocol)? If yes, flag it.
+    - **Industry-standard divergence:** if the recommendation departs from
+      the common default, say so explicitly so the human can challenge it.
+    Pick the recommendation you'd actually pick — do not punt to the human
+    with a menu. But when there's a meaningful alternative, lock-in, or
+    divergence, leave a one-line breadcrumb in the thread entry so the human
+    can decide whether to ask a follow-up. Stay quiet on trivial or obvious
+    choices — this is for "hey boss, I'm handling it but you should know XYZ
+    came up", not running commentary.
+4) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:**` line at top
+     - Add a bullet to Recent describing questions answered
+     - Update Blockers briefly
+   - Otherwise: SKIP. The next PM.StatusUpdate will summarize.
+5) Update plans/state.json:
+   - last_action.action_id = Principal.AnswerQuestions
+   - If fully unblocked: last_action.result = "ok", pause_type = "continue", next_action_id = Staff.ImplementationExecution
+   - If a human decision is required: last_action.result = "blocked", pause_type = "decision", next_action_id = Human.ResolveBlocker, add blocker(s)
+
+Constraints:
+- Do not implement code.
+
+Output:
+- Brief summary
+- Exact edits/patches for modified files

@@ -1,0 +1,118 @@
+ROLE: Principal
+TASK: BuildReview
+
+Goal: Review plans/BUILD.md for technical feasibility, scope clarity, and completeness. Ensure the Build plan is solid enough for milestone planning to proceed.
+
+Inputs:
+- plans/state.json (routing + context)
+- plans/config.json (workflow configuration — read `status_updates`)
+- plans/VISION.md (the concept brief — the human's original intent for this Build)
+- plans/BUILD.md (the Build plan to review)
+- plans/STATUS.md (current snapshot)
+
+Instructions:
+1) Review plans/BUILD.md against these criteria:
+   - **Fidelity to the concept brief.** Read plans/VISION.md — the human's original
+     intent — and check that BUILD.md faithfully captures it: the right goal, scope,
+     and any constraints the human called out. Flag drift (BUILD.md solving a different
+     problem, quietly dropping a stated constraint, or over/under-scoping vs. the
+     brief). VISION.md is the durable reference of what the human actually asked for;
+     do NOT modify it — read it for grounding only.
+   - Is the purpose clear and specific?
+   - Is the scope well-defined (in/out)?
+   - Are success criteria measurable?
+   - Is the milestone breakdown reasonable?
+   - **Size / milestone-count consistency.** BUILD.md frontmatter declares a `size`
+     (see plans/FORMATS.md for the four values and their caps). If the frontmatter
+     is missing entirely (legacy build), flag that as a REQUIRED change so the
+     human can backfill an explicit value. Otherwise, verify the declared size
+     is consistent with the scope and with the milestone count in BUILD.md:
+     - `phase-only` / `single-milestone` — must list exactly one milestone (M1).
+     - `full` — must list 2+ milestones (typical 3+).
+     - `step-only` — note that step-only builds **skip Principal.BuildReview**
+       via the carve-out route in ProductVision; you should only see one here if
+       it was routed in manually or if `Principal.PlanDiversion` is escalating
+       *off* step-only. In either case, the appropriate flag is that the BUILD.md
+       needs to be rewritten into full form for the standard chain — make that a
+       REQUIRED change.
+     A mismatch (e.g., `size: step-only` with three milestones, or a sprawling scope
+     declared as `step-only`) is REQUIRED changes — the human can confirm by re-running
+     Product.ProductVision or by adjusting `size` directly. Use your engineering
+     judgment on whether the declared size matches what the scope actually demands;
+     prefer the smaller size when in doubt.
+   - **Size ↔ depth consistency.** Verify the BUILD.md's prose depth matches the
+     declared `size` per plans/FORMATS.md § "Prose depth scales with size." A
+     `phase-only` BUILD.md with sprawling Scope / Success / Risks sections that
+     read like a `full` build is a defect — flag it as REQUIRED changes ("trim
+     to match size"). Conversely, a `full` BUILD.md that is too thin (e.g., one
+     sentence per section, no real risk analysis) is also REQUIRED — either grow
+     the prose or shrink the declared size. The document's length should
+     embarrass you if it doesn't match the size.
+   - Are there obvious technical risks or missing assumptions?
+   - **Engineering judgment.** For any non-trivial capability implied by the Build
+     (auth, payments, email, analytics, search, file storage, observability,
+     real-time, background jobs, etc.), briefly consider:
+     - **Buy vs. build:** is there a managed service or established OSS option
+       the Build should use instead of (or before) custom code? If the Build
+       implies building it from scratch, that's a flag worth raising — not a
+       veto, just a question.
+     - **One-way doors:** does the Build commit to a choice that's hard to
+       reverse (data model, vendor lock-in, license, platform, protocol)?
+     - **Industry-standard divergence:** does the Build depart from the common
+       default approach for this kind of project? If yes, the rationale should
+       be on the page.
+     - **Foundational concerns:** are there basic project foundations (auth,
+       payments, analytics, marketing, observability, etc.) that this Build
+       implicitly defers? Most prototypes legitimately defer most of these —
+       but if the Build *needs* one and doesn't address it, flag it. If the
+       Build *doesn't* need it now, it's fine to defer; consider whether it
+       should be logged in BACKLOG so it's not forgotten.
+     Pick the recommendation you'd actually pick — do not punt to the human
+     with a menu of options. But when there's a meaningful alternative,
+     lock-in, or divergence, leave a one-line breadcrumb in the review notes
+     (REQUIRED / SUGGESTED / RISK as appropriate) so the human can decide
+     whether to ask a follow-up. Stay quiet on trivial or obvious choices.
+2) Append review feedback as a new entry at the bottom of plans/thread.md:
+   - Use the entry format: `---` then `### Principal.BuildReview — <date>`
+   - Within the entry, note it is the Build Review for <Build ID>.
+   - Distinguish:
+     - REQUIRED changes (blocking — must be addressed before milestone planning)
+     - SUGGESTED improvements (non-blocking — can be addressed later)
+     - RISKS identified (for awareness)
+3) Decide outcome:
+   - APPROVED — Build plan is ready for milestone planning
+   - CHANGES REQUIRED — BUILD.md needs revision (loop back to Product or Human)
+   - BLOCKED — fundamental issue requires human decision
+4) Update plans/STATUS.md (config-gated):
+   - Read `status_updates` from plans/config.json (default: "pm_only" if missing).
+   - If `status_updates = "every_action"`:
+     - Refresh the `**Update configuration:** status_updates=<value>` line at top
+     - Add a bullet to Recent summarizing the review outcome
+   - Otherwise (`pm_only`, `every_milestone`, or `never`): SKIP the STATUS write.
+     The downstream PM.StatusUpdate (after Human.ApproveBuild) will refresh STATUS.
+5) Update plans/state.json:
+   - last_action.action_id = Principal.BuildReview
+   - If APPROVED:
+     - last_action.result = "approved"
+     - pause_type = "decision"
+     - next_action_id = Human.ApproveBuild
+   - If CHANGES REQUIRED:
+     - last_action.result = "changes_required"
+     - pause_type = "decision"
+     - next_action_id = Human.ResolveBlocker
+     - Add blocker(s) describing what needs to change in BUILD.md
+   - If BLOCKED:
+     - last_action.result = "blocked"
+     - pause_type = "decision"
+     - next_action_id = Human.ResolveBlocker
+     - Add blocker(s) with clear summary
+
+Constraints:
+- Do not implement code.
+- Do not modify plans/BUILD.md yourself — flag issues for resolution.
+- Do not modify plans/VISION.md — it is the human-owned concept brief, read-only to actions.
+- Do not create plans/MILESTONE.md (that is the next action after Human.ApproveBuild).
+
+Output:
+- Brief review summary
+- Exact edits to plans/thread.md, plans/STATUS.md, plans/state.json
