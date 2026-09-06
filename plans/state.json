@@ -7,20 +7,20 @@
   "phase_id": null,
   "step_id": null,
 
-  "pause_type": "decision",
+  "pause_type": "continue",
 
   "last_action": {
-    "action_id": "Human.InitializeProject",
+    "action_id": "PM.StatusUpdate",
     "result": "ok",
-    "summary": "Initialized plans/ skeleton. Run Product.ProductVision to begin."
+    "summary": "Hand-off from Human.ApproveBuild. STATUS.md updated to reflect build approval and confirmed workspace repo. BACKLOG unchanged (no new items). CHANGELOG placeholder cleared (no phase delta). Routing to Principal.MilestonePlan."
   },
 
-  "next_action_id": "Product.ProductVision",
+  "next_action_id": "Principal.MilestonePlan",
 
   "blockers": [],
 
   "context": {
-    "goal": "<fill in: what are we building?>",
+    "goal": "A small mobile-first website that answers whether salmon are currently visible at Ballard Locks and forecasts total salmon expected over the next 7 days, combining crowd YES/NO reports with locally stored official/historical fish-count data.",
     "notes": [
       "STATE is the routing source of truth.",
       "STATUS must be updated every action.",
