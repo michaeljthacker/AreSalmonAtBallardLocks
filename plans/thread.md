@@ -176,7 +176,7 @@ Inspection first, then the schema it decided.
 - shared scope (mjt-pub-api): `apps/salmon/` — `models.py`, `constants.py`, `admin.py`, `apps.py`, `urls.py`, `serializers.py`/`views.py` (documented stubs, P2 fills), `migrations/0001_initial.py`, `tests/test_models.py`, `tests/test_admin.py`
 - shared scope (mjt-pub-api): `mjt_pub_api/settings.py` (one `INSTALLED_APPS` line), `mjt_pub_api/urls.py` (one `urlpatterns` line) — the two append-only files flagged in MILESTONE Notes as `feat/bible-guides` conflict points
 - project scope: `docs/data-sources.md` (new, 313 lines), `plans/DECISIONS.md` (2 new entries + 1 amendment)
-- Commit: `a709172` on `feat/salmon-ballard-locks`. Not pushed.
+- Commit: `a709172` on `feat/salmon-ballard-locks`. Not pushed at the time of writing; it was subsequently pushed to `origin` from outside this session.
 
 **Acceptance criteria**
 - [x] `docs/data-sources.md` records per source: stable URL, format, field names/types, species vocabulary, granularity, history depth, cadence, revision/backfill behavior, known gaps, attribution/terms
@@ -317,7 +317,8 @@ code-reviewed or human-approved**, because `code_review = every_milestone` and
 M2 has two more phases.
 
 Shared repo `mjt-pub-api`, branch `feat/salmon-ballard-locks`, commit
-`a709172` — **not pushed**:
+`a709172` — **pushed to `origin` on the feature branch**, never merged to
+`main`:
 - `apps/salmon/` — `SightingReport` and `FishCount` models, `constants.py`
   (closed species vocabulary + `SALMON_SPECIES` subset), admin for both,
   `migrations/0001_initial.py`, 24 passing tests. `serializers.py`/`views.py`
@@ -327,7 +328,8 @@ Shared repo `mjt-pub-api`, branch `feat/salmon-ballard-locks`, commit
   correction note whenever `manually_corrected` is set.
 - `mjt_pub_api/settings.py` and `mjt_pub_api/urls.py` — one additive line each.
 
-Project repo, `main`, commits `fb13a04` / `8cf2567` / `83e2c37` — not pushed:
+Project repo, `main`, commits `fb13a04` / `8cf2567` / `83e2c37` — pushed to
+`origin/main`:
 - `docs/data-sources.md` — the full source inspection, and the most valuable
   artifact produced by this Build. Independently useful even if the project
   never resumes.
@@ -383,3 +385,24 @@ checking the legacy-archive lead above.
    append-only conflict points between that branch and this one; the longer
    `feat/salmon-ballard-locks` sits unmerged and unpushed, the likelier the
    collision.
+
+---
+### Shelving follow-up — 2026-09-07
+
+Marker commits recorded in the two sibling repos so the pause is legible from
+whichever repo someone lands in first, and all three branches pushed to
+`origin` per human instruction.
+
+- `mjt-pub-api` `6e46574` — empty commit on **`feat/salmon-ballard-locks`**.
+  Deliberately not merged and not pushed to `main`: `apps/salmon` is
+  unreviewed. `origin` only; the `heroku` remote on that repo was left
+  untouched, since pushing there deploys.
+- `workspace-AreSalmonAtBallardLocks` `58c722d` — empty commit on `main`.
+  Records that the workspace itself is complete and working and that the stop
+  is upstream of it, so nobody hunts for a fault here.
+- This repo — `main` pushed to `origin/main`.
+
+**Correction to the entry above:** it claimed `a709172` was unpushed in
+`mjt-pub-api`. It was already on `origin` — pushed from outside this session
+(no auto-push hook exists, and this session ran no `git push` before now).
+The "not pushed" lines have been fixed in place rather than left to mislead.
