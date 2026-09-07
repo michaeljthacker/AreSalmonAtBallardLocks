@@ -10,12 +10,12 @@
   "pause_type": "continue",
 
   "last_action": {
-    "action_id": "Human.PhaseApproval",
-    "result": "approved",
-    "summary": "B1-M1 approved. Live devcontainer rebuild completed on the Windows host: python manage.py check passed against mjt-pub-api, dev.sh started both servers (:8000/:8080), Ctrl+C stopped both cleanly. Workspace repo's origin push and casing/venv-guard fixes confirmed in place. Result recorded in workspace repo VERIFY.md (2026-09-07)."
+    "action_id": "PM.AdvancePhase",
+    "result": "ok",
+    "summary": "P1 is the only/last phase in B1-M1 (MILESTONE.md defines a single phase). Milestone is complete — routing to PM.MilestoneCloseout rather than advancing to a next phase. STATUS.md not updated (status_updates=pm_only; will be refreshed by the closeout action)."
   },
 
-  "next_action_id": "PM.AdvancePhase",
+  "next_action_id": "PM.MilestoneCloseout",
 
   "blockers": [],
 
