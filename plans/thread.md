@@ -260,3 +260,126 @@ baseline, which no longer rests on a single year for those two species.
 
 **Session paused here at human request.** Picking up in the morning. State is
 unchanged: still routing to `PM.StatusUpdate` for B1-M2-P1, nothing pushed.
+
+---
+### PAUSED — Project shelved 2026-09-07
+
+Human decision: **shelve the project**, on the grounds that less quality data
+is available than the concept assumed. This entry is the pick-up point. No
+further SAM actions should run until a human un-shelves.
+
+## Why it stopped
+
+The B1-M2-P1 source inspection was the first step in this Build that made
+contact with the real data, and the data is thinner than VISION assumed. It is
+worth being precise about *which* part is thin, because it is not all of it:
+
+| Species | Daily history obtainable | Route |
+|---|---|---|
+| Sockeye | **17 seasons** (2010–2026) | one JSON download |
+| Chinook | 7 seasons (2020–2026) | one archived fetch per year |
+| Coho | 8 seasons (2019–2026) | one archived fetch per year |
+
+- **Sockeye is genuinely well served** and on its own clears the 10-complete-
+  year floor that VISION §21.1's seasonality curve and §21.2's "this year vs.
+  typical" comparison need.
+- **Chinook and coho do not clear that floor** — 7 and 8 seasons — and coho is
+  thinner than the season count suggests: every year publishes coho daily
+  counts only from ~September 1, with the earlier run folded into a single
+  multi-day range row that cannot be attributed to any date.
+- **There is no second authoritative source to fill the gap.** One count
+  series exists (WDFW with the Muckleshoot Indian Tribe at the Ballard Locks
+  ladder). USACE operates the ladder but does not publish counts and its site
+  returns 403. The one other feed on WDFW's counts host is the Baker River
+  trap — a different watershed. Details per source in `docs/data-sources.md`.
+
+The product promise is a 7-day forecast of **total salmon**, which means all
+three species. A forecast whose sockeye component rests on 17 years and whose
+Chinook and coho components rest on 7 and 8 — with coho blind before
+September — is a weaker product than the concept described, and VISION §3.3
+explicitly forbids implying precision the data does not have.
+
+**One lead was left unexplored and is the first thing to check on un-shelving.**
+The legacy pre-redesign WDFW counts section, `wdfw.wa.gov/fishing/counts/sockeye/`,
+is archived back to **2010** and contains `archives.html` alongside
+`chinook_chart.jpg` and `coho_chart.jpg`. It was never fetched. If
+`archives.html` holds tabular data it plausibly lifts Chinook and coho over
+the 10-year floor and removes the reason for shelving; if the only artifacts
+are chart images, it confirms it. **This is a roughly one-hour check and it
+determines whether the project is viable as conceived.** Do it before
+re-planning anything.
+
+## What exists and works
+
+B1-M1 (workspace/devcontainer scaffolding) is complete and approved.
+B1-M2-P1 is implemented, committed, and **passing** — but has **not been
+code-reviewed or human-approved**, because `code_review = every_milestone` and
+M2 has two more phases.
+
+Shared repo `mjt-pub-api`, branch `feat/salmon-ballard-locks`, commit
+`a709172` — **not pushed**:
+- `apps/salmon/` — `SightingReport` and `FishCount` models, `constants.py`
+  (closed species vocabulary + `SALMON_SPECIES` subset), admin for both,
+  `migrations/0001_initial.py`, 24 passing tests. `serializers.py`/`views.py`
+  are documented stubs; `urls.py` has empty `urlpatterns`.
+- Three constraints verified present in the generated DDL: unique
+  `(date, species)`, `species` restricted to the vocabulary, and a required
+  correction note whenever `manually_corrected` is set.
+- `mjt_pub_api/settings.py` and `mjt_pub_api/urls.py` — one additive line each.
+
+Project repo, `main`, commits `fb13a04` / `8cf2567` / `83e2c37` — not pushed:
+- `docs/data-sources.md` — the full source inspection, and the most valuable
+  artifact produced by this Build. Independently useful even if the project
+  never resumes.
+- `plans/DECISIONS.md` — the `(date, species)` and species-vocabulary rulings.
+
+Verification status at the pause: `pytest apps/salmon` 24 passed;
+`makemigrations --check` clean; `migrate` applied to a genuinely fresh
+database; `manage.py check` clean. The **full backend suite was deliberately
+not run** — deferred to milestone end per human direction, and P1 did touch
+two files outside `apps/salmon`.
+
+## What was never built
+
+- **B1-M2-P2** — write + read endpoints, and the one-time historical
+  bootstrap. Not started.
+- **B1-M2-P3** — the scheduled idempotent importer. Not started.
+- **B1-M3** — aggregation rule and 7-day forecast. This is the milestone the
+  data shortfall actually threatens.
+- **B1-M4** — frontend MVP. The `index.html` placeholder from M1 is untouched.
+- **B1-M5** — seasonality visualizations, Sources/Methodology pages, deployment.
+
+## Routing state at the pause
+
+`plans/state.json` is left **exactly where P1 finished**, deliberately not
+edited into any paused state — SAM has no shelved `pause_type`, and inventing
+one would corrupt the schema:
+
+- `build_id: B1`, `milestone_id: M2`, `phase_id: P1`
+- `next_action_id: PM.StatusUpdate`, `pause_type: continue`, `blockers: []`
+
+So a naive "run the next action" **will resume the Build** by writing a status
+update. That is the intended behavior if the project is un-shelved and nothing
+has changed. If the shortfall changes the plan instead, do not run
+`PM.StatusUpdate` — go to `Principal.MilestonePlan` (or re-open VISION) after
+checking the legacy-archive lead above.
+
+## Open questions carried forward
+
+1. **Does the legacy archive hold tables or only images?** Decides viability.
+2. **Is a sockeye-strong / Chinook-coho-weak forecast still the product?**
+   Options if the legacy lead fails: narrow the promise to sockeye (which the
+   data fully supports), keep all three but disclose per-species confidence,
+   or drop the forecast and ship the current-status answer plus seasonality
+   only. This is a VISION-level product call, not a plan-level one.
+3. **`other` + `(date, species)` can collide** — two different unrecognized
+   labels on one date contend for one row. P3 must error loudly rather than
+   overwrite. Unresolved, no code affected yet.
+4. **No open data license.** WDFW pages carry a bare "all rights reserved"
+   with no terms for these tables. The stance taken (store counts as facts,
+   always attribute WDFW + Muckleshoot Indian Tribe + USACE, never republish)
+   deserves a human sanity check before anything ships publicly.
+5. **`feat/bible-guides` conflict.** `settings.py` and `urls.py` are
+   append-only conflict points between that branch and this one; the longer
+   `feat/salmon-ballard-locks` sits unmerged and unpushed, the likelier the
+   collision.
