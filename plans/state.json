@@ -7,15 +7,15 @@
   "phase_id": "P1",
   "step_id": null,
 
-  "pause_type": "continue",
+  "pause_type": "decision",
 
   "last_action": {
-    "action_id": "PM.StatusUpdate",
+    "action_id": "Writer.DocumentationUpdate",
     "result": "ok",
-    "summary": "Hand-off after Human.ApproveMilestone: STATUS.md updated to reflect B1-M1 approval and P1 active. BACKLOG and CHANGELOG unchanged. Proceeding to Staff.DraftQuestions."
+    "summary": "Updated root README.md for B1-M1: Tech stack now describes the devcontainer-first multi-root workspace (backend bind-mounted, branch off main), Getting started documents the Reopen-in-Container + dev.sh open-and-run flow with real workspace-repo link, Status reflects M1 scaffolding done with M2-M5 pending. STATUS skipped (status_updates=pm_only). DECISIONS/STANDARDS unchanged (branching standard already recorded; M1 items non-durable). Routing to Human.PhaseApproval (formal_approval=every_milestone, P1 is the last phase of M1)."
   },
 
-  "next_action_id": "Staff.DraftQuestions",
+  "next_action_id": "Human.PhaseApproval",
 
   "blockers": [],
 

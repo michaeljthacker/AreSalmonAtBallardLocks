@@ -15,7 +15,7 @@
     "shared_repos": [
       {
         "name": "mjt-pub-api",
-        "path": "../../projects/mjt-pub-api",
+        "path": "../../Projects/mjt-pub-api",
         "role": "Shared Django 5.2 + DRF backend (Python 3.12). Hosts this project's webapp(s), data models (sighting_report, fish_count), report/read endpoints, and scheduled fish-count importer. Reused across multiple projects — branch feature work off main and stay aware of other in-flight feature branches."
       }
     ]

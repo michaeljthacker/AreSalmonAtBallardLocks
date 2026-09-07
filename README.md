@@ -19,16 +19,22 @@ The answer comes first: open the page, see the status, tap YES or NO. Everything
 
 ## Tech stack
 
-Multi-root workspace modeled on the existing `stencil-bible-guides` devcontainer pattern:
+Development happens in a multi-root VS Code workspace backed by a devcontainer (adapted from the `stencil-bible-guides` workspace pattern — the pattern only, not its Stripe/LLM concerns). The devcontainer is the standard environment: it owns the backend Python virtualenv and dependency install, so there is no separate host-venv workflow.
 
 - **Frontend** — this repo, a plain static site (HTML/CSS/vanilla JS; no framework, no build step).
-- **Backend** — the existing [`mjt-pub-api`](https://github.com/) service (report + fish-count storage, ingestion, aggregation endpoints).
-- **Workspace** — a `workspace-AreSalmonAtBallardLocks` multi-root workspace folder.
+- **Backend** — the existing `mjt-pub-api` service, a shared Django 5.2 + DRF app on Python 3.12 (report + fish-count storage, ingestion, aggregation endpoints). Bind-mounted into the workspace; feature work branches off `main`.
+- **Workspace** — the [`workspace-AreSalmonAtBallardLocks`](https://github.com/michaeljthacker/workspace-AreSalmonAtBallardLocks) repo, which holds the `.code-workspace` file, the `.devcontainer/`, and a `dev.sh` runner.
 
 ## Getting started
 
-_To be filled in once the workspace/devcontainer scaffolding (M1) is reproduced._
+Development runs inside the devcontainer defined in the workspace repo (`workspace-AreSalmonAtBallardLocks`), which bind-mounts this frontend repo, the `mjt-pub-api` backend, and the workspace folder as three roots.
+
+1. Clone the workspace repo, this repo, and `mjt-pub-api` as sibling checkouts under your `DevSpace` tree.
+2. Open `AreSalmonAtBallardLocks.code-workspace` in VS Code and **Reopen in Container**. The devcontainer creates the backend virtualenv and installs dependencies from `mjt-pub-api/requirements/dev.txt` on first build.
+3. Run `dev.sh` to start both services: the Django API on `:8000` and a static server for this frontend on `:8080` (both published to the LAN for on-phone testing). Ctrl+C stops both cleanly.
+
+See the workspace repo's `README.md` and `VERIFY.md` for the full open-and-run guide and the environment verification log.
 
 ## Status
 
-Early planning. See `plans/` for the SAM build plan and current status.
+Workspace and devcontainer scaffolding (M1) is in place. Product features — data models, endpoints, the fish-count importer, aggregation, forecast, and the real frontend — are M2–M5. See `plans/` for the SAM build plan and current status.
