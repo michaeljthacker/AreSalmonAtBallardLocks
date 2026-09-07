@@ -5,10 +5,11 @@
 ### PM.ThreadMaintenance — 2026-09-07
 B1-M1 is fully closed (code review, formal approval, documentation update, and milestone closeout have all run), so every `every_milestone` gate protecting M1 content has been satisfied. Pruned all M1 build-review, question, execution, review, and approval entries after promoting the durable content below.
 
-**Promoted to plans/DECISIONS.md** (three entries; DECISIONS.md had never been populated — it still held template placeholder text, and two of these were explicitly marked "capture in DECISIONS.md" during M1 but never written):
+**Promoted to plans/DECISIONS.md** (DECISIONS.md had never been populated — it still held template placeholder text, and both of these were explicitly marked "capture in DECISIONS.md" during M1 but never written):
 - Frontend is a plain static site (HTML/CSS/vanilla JS, no framework, no build step).
-- `stencil-bible-guides` is a reference model to adapt, never a verbatim clone.
 - Workspace repo naming: `workspace-`prefixed remote, unprefixed local directory — deliberately mismatched.
+
+**Proposed but rejected by the human (2026-09-07):** "`stencil-bible-guides` is a reference model to adapt, never a verbatim clone" — scoped to M1 only, not durable. Removed from DECISIONS.md.
 
 **Promoted to plans/STANDARDS.md:**
 - Development environment — the devcontainer is the standard environment for projects consuming `mjt-pub-api` and owns venv/dependency setup; no co-equal host-venv path.
@@ -20,51 +21,13 @@ B1-M1 is fully closed (code review, formal approval, documentation update, and m
 **Promotion proposals surfaced — awaiting human approval (see below). Nothing has been written to any shared repo.**
 
 ---
-### PM.ThreadMaintenance — 2026-09-07 (PENDING: shared-standard promotion proposals)
-`workspace.shared_repos` includes `mjt-pub-api`. Two STANDARDS.md entries meet all three promotion tests (rationale generalizes beyond this project, concerns code/contracts owned by the shared repo, and is stable rather than under active negotiation). Both are proposed for promotion into the shared repo so other consuming projects inherit them:
+### PM.ThreadMaintenance — 2026-09-07 (promotions executed)
+Human approved both shared-standard promotion proposals. Executed against the shared `mjt-pub-api` repo on branch `feat/salmon-ballard-locks` (verified checked out and clean before writing; branch previously confirmed to match `main`).
 
-```
-Promotion proposal 1:
-  entry: "Feature work in a shared repo (e.g. `mjt-pub-api`) branches off `main`, and this
-          project does not assume ownership of that repo's working state — other projects
-          have concurrent in-flight branches. Rebase/branch from `main`, not from whatever
-          happens to be checked out. (2026-09-06)
-          **Why this matters long-term:** shared repos are consumed by multiple projects at
-          once; assuming exclusive ownership of the working tree or basing work off an
-          unrelated branch silently entangles this project's changes with another's,
-          producing merge conflicts and cross-project regressions that are expensive to
-          untangle."
-  source: plans/STANDARDS.md  (### Branching convention)
-  target_repo: mjt-pub-api
-  target_path: ../../Projects/mjt-pub-api/STANDARDS.md
-  rationale: The rule is about mjt-pub-api's own branching contract and binds every consuming
-             project equally, not just this one. Living only in this project's plans/ means
-             each new consumer must rediscover it — and this milestone already hit the failure
-             mode it prevents (the backend was sitting on another project's feature branch).
+**Written to `mjt-pub-api/STANDARDS.md`** (root-level standards doc — the shared repo owns no `plans/`), matching that file's existing entry format and its "Promoted from ..." provenance convention:
+- Branch feature work off `main`, never assume ownership of this repo's working state.
+- The devcontainer is the standard development environment for projects consuming this repo (owns venv + `requirements/dev.txt` install).
 
-Promotion proposal 2:
-  entry: "The devcontainer is the standard development environment for projects consuming
-          `mjt-pub-api`: it owns Python venv creation and dependency installation (from the
-          backend's `requirements/dev.txt`), and verification runs inside it. Do not maintain
-          a co-equal host-venv workflow as a documented parallel path. (2026-09-06)
-          **Why this matters long-term:** the shared backend pins a specific Python version
-          and dependency set, and each consuming project would otherwise reproduce venv
-          management slightly differently on its host — the exact drift that makes 'works on
-          my machine' bugs expensive across a multi-project, multi-repo setup. Documenting a
-          host fallback as co-equal guarantees it will be used, and then diverge. If a live
-          container rebuild genuinely can't be run, record the gap in a verification log
-          rather than substituting a host path."
-  source: plans/STANDARDS.md  (### Development environment)
-  target_repo: mjt-pub-api
-  target_path: ../../Projects/mjt-pub-api/STANDARDS.md
-  rationale: This describes how the shared backend's own venv and dependency set are meant to
-             be consumed — it is a property of mjt-pub-api, not of the salmon project. The
-             backend is already developed this way in other projects; writing it down in the
-             shared repo makes the existing convention discoverable instead of tribal.
-```
+Both source entries are **retained** in this project's `plans/STANDARDS.md` with a one-line cross-reference rather than deleted — each still governs this project's own behavior directly.
 
-**Human response options:** `approve all` / `approve 1` / `approve 2` / `reject all` / `approve with edits: <text>`. On approval, the next PM.ThreadMaintenance run appends the approved entries to `mjt-pub-api/STANDARDS.md` (no `plans/` wrapper — shared repos never get one) and cross-references them here. On rejection, the entries simply stay in this project's STANDARDS.md.
-
-**Note:** writing to `mjt-pub-api` means committing to the shared repo. Per the branching standard itself, that write should land on a branch off `main`, not on whatever is currently checked out.
-
-**After this is resolved, proceed to Principal.MilestonePlan for B1-M2.**
+Blocker BL-001 cleared. Proceeding to Principal.MilestonePlan for B1-M2.
