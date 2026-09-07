@@ -3,19 +3,19 @@
   "version": "0.2",
 
   "build_id": "B1",
-  "milestone_id": "M1",
-  "phase_id": "P1",
+  "milestone_id": "M2",
+  "phase_id": null,
   "step_id": null,
 
   "pause_type": "continue",
 
   "last_action": {
-    "action_id": "PM.AdvancePhase",
+    "action_id": "PM.MilestoneCloseout",
     "result": "ok",
-    "summary": "P1 is the only/last phase in B1-M1 (MILESTONE.md defines a single phase). Milestone is complete — routing to PM.MilestoneCloseout rather than advancing to a next phase. STATUS.md not updated (status_updates=pm_only; will be refreshed by the closeout action)."
+    "summary": "B1-M1 (Workspace/devcontainer scaffolding) closed. CHANGELOG.md: added milestone-complete summary under Unreleased. BACKLOG.md: unchanged (no M1-scoped items; P1 anti-abuse item carries forward, unrelated to M1). STATUS.md not updated (status_updates=pm_only). BUILD.md size=full with M2-M5 remaining, so this does not end the Build; advancing milestone_id to M2. Routing to PM.ThreadMaintenance to prune/promote thread content before Principal.MilestonePlan drafts M2."
   },
 
-  "next_action_id": "PM.MilestoneCloseout",
+  "next_action_id": "PM.ThreadMaintenance",
 
   "blockers": [],
 
