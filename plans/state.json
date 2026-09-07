@@ -1,30 +1,24 @@
 {
   "$schema": "state.schema.json",
   "version": "0.2",
-
   "build_id": "B1",
   "milestone_id": "M2",
-  "phase_id": null,
+  "phase_id": "P1",
   "step_id": null,
-
   "pause_type": "continue",
-
   "last_action": {
-    "action_id": "PM.ThreadMaintenance",
+    "action_id": "Staff.ImplementationExecution",
     "result": "ok",
-    "summary": "Human resolved BL-001: approved both shared-standard promotions and rejected the stencil-bible-guides DECISIONS entry as phase-scoped rather than durable. Removed that entry from DECISIONS.md, leaving 2 real entries in a file that had held only template placeholder text. Wrote both approved standards (branch-off-main; devcontainer-first) to mjt-pub-api/STANDARDS.md on branch feat/salmon-ballard-locks (verified clean before writing), matching that file's existing format and provenance convention; source entries retained in plans/STANDARDS.md with a cross-reference since both still govern this project. Shared-repo change is committed but NOT pushed. STATUS.md skipped (status_updates=pm_only)."
+    "summary": "Implemented B1-M2-P1. Inspection (verified live 2026-09-07) settled the schema: one authoritative series (WDFW + Muckleshoot at the Ballard Locks ladder), so the constraint is (date, species) with source as provenance -- strengthened by finding that the two retrieval routes OVERLAP on current-season sockeye, so keying on source would double-count one observation. Found an undocumented JSON feed behind the page's chart (pssp-count.wdfw-fish.us) carrying 17 seasons of daily sockeye in one download. Four findings that change downstream plans: Chinook/coho have NO obtainable multi-year daily history (sockeye ~15 sound years vs one season for the other two, so M3's baseline for those rests on a single year); the JSON's count_Nyear keys are relative to the current year, not calendar (verified by matching the 2017/2013 spikes against the independent annual table); blank cells are pre-rendered for the whole season and must not be read as zero; multi-day range rows exist and cannot be stored. Recent-window question dissolved -- the source serves the full season in one document and warns counts are revised, so re-parse the whole season every run. Built apps/salmon with both models, three DB-level constraints verified in the DDL (unique (date,species), closed species vocabulary, correction-note-required), admin for both, 24 tests passing, makemigrations --check clean, migrate verified on a genuinely fresh DB. Corrected two prior assumptions: steelhead is not published at this ladder (no vocabulary member created; the SALMON_SPECIES subset structure retained and the affected DECISIONS entry annotated to avoid a standing contradiction), and the source gives a per-row Running Total, enabling a per-date parser checksum rather than a season-end one. Commit a709172 on feat/salmon-ballard-locks (not pushed). Full pytest suite deliberately NOT run -- deferred to milestone end per human direction mid-phase; caveat recorded in thread since this phase did touch settings.py and urls.py, both covered by a passing manage.py check. STATUS.md skipped (status_updates=pm_only). P1 is not the last phase and code_review=every_milestone, so routing to PM.StatusUpdate."
   },
-
-  "next_action_id": "Principal.MilestonePlan",
-
+  "next_action_id": "PM.StatusUpdate",
   "blockers": [],
-
   "context": {
     "goal": "A small mobile-first website that answers whether salmon are currently visible at Ballard Locks and forecasts total salmon expected over the next 7 days, combining crowd YES/NO reports with locally stored official/historical fish-count data.",
     "notes": [
       "STATE is the routing source of truth.",
       "STATUS must be updated every action.",
-      "Thread is active working memory; prune when there is genuinely prunable/promotable content, not merely because it is long (prunability gate — see plans/README.md 'Thread management' and D-026). Cannot prune before most content before Code Review and Human Approval."
+      "Thread is active working memory; prune when there is genuinely prunable/promotable content, not merely because it is long (prunability gate \u2014 see plans/README.md 'Thread management' and D-026). Cannot prune before most content before Code Review and Human Approval."
     ]
   }
 }

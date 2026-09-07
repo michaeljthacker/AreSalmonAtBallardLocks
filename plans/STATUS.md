@@ -4,15 +4,14 @@
 
 ## Now
 - Build: B1 — Are Salmon at Ballard Locks?
-- Milestone: M1 — Workspace/devcontainer scaffolding
-- Phase: P1 (complete — pending Writer.DocumentationUpdate + Human.PhaseApproval)
+- Milestone: M2 — Backend data layer (`mjt-pub-api`)
+- Phase: P1 (not yet started) — Source inspection, models, migrations, admin
 
 ## Blockers
 - None
 
 ## Recent
-- B1-M1-P1 implemented and reviewed. Multi-root workspace scaffolding delivered: workspace folder/repo (`workspaces/AreSalmonAtBallardLocks`), `.code-workspace` (three roots), devcontainer (Py3.12 + Node LTS, venv/deps owner), `dev.sh` (API :8000 + static :8080, clean shutdown), placeholder `index.html` in the frontend repo, README + VERIFY docs. Code review approved (no REQUIRED items); two SUGGESTED improvements implemented (dev.sh venv fail-fast guard, README path-casing standardized to `Projects`). Live in-container rebuild pending human confirmation at Human.PhaseApproval.
+- B1-M2 milestone approved. Plan was cut from 6 phases to 3 (P1 source inspection+models, P2 endpoints+bootstrap, P3 scheduled importer) after human pushback on administrative overhead of a code-free phase. Human confirmed: write key on the report endpoint (casual-posting speed bump, not spam defense), throttle tighter than DRF default, `ImportRun` table, and Turnstile deferred to BACKLOG. Investigated concurrent `feat/bible-guides` branch: migrations are per-app and cannot collide; only three append-only config files (`settings.py`, `urls.py`, `env.example`) will need trivial conflict resolution at merge time; M2 must add no new backend dependencies to avoid the one real conflict risk (`requirements/*.txt`).
 
 ## Next
-- Writer.DocumentationUpdate — documentation pass for B1-M1-P1.
-- Human.PhaseApproval — human runs the live devcontainer rebuild/verification and approves M1 close.
+- Staff.DraftQuestions — open questions for B1-M2-P1 before implementation starts.
