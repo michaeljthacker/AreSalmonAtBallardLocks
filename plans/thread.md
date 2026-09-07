@@ -222,3 +222,14 @@ The two ⚠ items are the known documented gap (Q-002): the agent cannot drive i
 - Add feedback to `plans/thread.md`; STATUS.md SKIP (pm_only).
 
 **Note for the in-container rebuild:** this chat will not survive the rebuild — this brief and instructions live here in `thread.md` (committed) so they're available inside the container.
+---
+### Human.PhaseApproval — 2026-09-07 (DECISION)
+**Decision: APPROVED** — B1-M1 "Workspace/devcontainer scaffolding" closes.
+
+Live devcontainer rebuild performed on the Windows host (Reopen in Container), then `./dev.sh`:
+- `python manage.py check` against `mjt-pub-api` inside the container: no issues.
+- `Ctrl+C` stopped both servers (:8000, :8080) cleanly.
+- Backend branch created off current `main` of the shared `mjt-pub-api` repo confirmed clean (not carrying the other project's in-flight feature branch).
+- Workspace repo's first push to `origin` completed; contents reviewed, looks good.
+
+Result recorded in the workspace repo's `VERIFY.md` ("Human live-rebuild — 2026-09-07", PASS). `state.json` updated: `last_action.result = approved`, `next_action_id = PM.AdvancePhase`, `pause_type = continue`. STATUS.md skipped per `status_updates = pm_only`.
