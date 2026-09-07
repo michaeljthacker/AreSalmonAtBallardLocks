@@ -7,17 +7,22 @@
   "phase_id": null,
   "step_id": null,
 
-  "pause_type": "continue",
+  "pause_type": "decision",
 
   "last_action": {
-    "action_id": "PM.MilestoneCloseout",
+    "action_id": "PM.ThreadMaintenance",
     "result": "ok",
-    "summary": "B1-M1 (Workspace/devcontainer scaffolding) closed. CHANGELOG.md: added milestone-complete summary under Unreleased. BACKLOG.md: unchanged (no M1-scoped items; P1 anti-abuse item carries forward, unrelated to M1). STATUS.md not updated (status_updates=pm_only). BUILD.md size=full with M2-M5 remaining, so this does not end the Build; advancing milestone_id to M2. Routing to PM.ThreadMaintenance to prune/promote thread content before Principal.MilestonePlan drafts M2."
+    "summary": "Pruned all resolved B1-M1 content from thread.md (every every_milestone gate for M1 had run). Promoted 3 durable project decisions to DECISIONS.md, which had never been populated and still held template placeholder text; two of them were explicitly marked for capture during M1 but never written. Promoted the devcontainer-first development-environment rule to STANDARDS.md. Resolved a contradiction in the thread over whether backend dependency hygiene was a standing decision — it is plan-scoped, stays in MILESTONE.md, no DECISIONS entry. Surfaced 2 shared-standard promotion proposals targeting mjt-pub-api/STANDARDS.md; nothing written to the shared repo. STATUS.md skipped (status_updates=pm_only)."
   },
 
-  "next_action_id": "PM.ThreadMaintenance",
+  "next_action_id": "Human.ResolveBlocker",
 
-  "blockers": [],
+  "blockers": [
+    {
+      "id": "BL-001",
+      "summary": "Two shared-standard promotion proposals await human approval before any write to the shared mjt-pub-api repo: (1) the branching convention (feature work branches off main; no assumption of ownership of the shared working tree), and (2) the devcontainer-first development-environment rule (devcontainer owns venv/dependency setup; no co-equal host-venv path). Both currently live in the primary repo's plans/STANDARDS.md and meet all three promotion tests. Full proposal text is in plans/thread.md. Human replies approve all / approve 1 / approve 2 / reject all / approve with edits. On approval the next PM.ThreadMaintenance run performs the write, which per the branching standard itself should land on a branch off main in mjt-pub-api. After resolution, proceed to Principal.MilestonePlan for B1-M2."
+    }
+  ],
 
   "context": {
     "goal": "A small mobile-first website that answers whether salmon are currently visible at Ballard Locks and forecasts total salmon expected over the next 7 days, combining crowd YES/NO reports with locally stored official/historical fish-count data.",

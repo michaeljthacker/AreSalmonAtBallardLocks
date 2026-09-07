@@ -2,9 +2,16 @@
 <!-- See plans/FORMATS.md for expected structure. Every entry requires a "Why this matters long-term" line — if you can't write a meaningful one, the entry doesn't belong here. -->
 
 ## Standing decisions
-- **<short title>.** <decision — "going forward, we will always…"> (YYYY-MM-DD)
-  **Why this matters long-term:** <rationale a future contributor needs to make sense of this>
+
+- **Frontend is a plain static site — HTML/CSS/vanilla JS, no framework, no build step.** The `stencil-bible-guides` name that seeded this project refers to the *workspace/devcontainer pattern* only; it does not imply Stencil or any frontend framework. (2026-09-06)
+  **Why this matters long-term:** the workspace name actively misleads — an early README inferred "Stencil-based web frontend" from it, and any future contributor (or agent) reading the lineage will draw the same wrong conclusion. This project's whole cost/complexity argument rests on a zero-build static site, so re-introducing a framework would quietly break the "tiny, boring, runs cheaply" premise that scopes M4 and the hosting choice in M5.
+
+- **`stencil-bible-guides` is a reference model to adapt, never a verbatim clone.** Derive workspace/devcontainer artifacts from it, then strip concerns that don't apply here (Stripe CLI, Stripe webhook forwarder, LLM generation worker). (2026-09-06)
+  **Why this matters long-term:** VISION §0's "reproduce / do not invent a new architecture" language reads as "duplicate" on a fast skim. Treating it that way drags another product's paid-billing and LLM infrastructure into a free civic site, and every future reuse of the pattern needs the same explicit permission to subtract.
+
+- **Workspace repo naming: remote is `workspace-`prefixed, local directory is not.** Remote `https://github.com/michaeljthacker/workspace-AreSalmonAtBallardLocks.git`; local folder `DevSpace/workspaces/AreSalmonAtBallardLocks`. The names intentionally differ. (2026-09-06)
+  **Why this matters long-term:** the unprefixed GitHub name was already taken by this frontend repo, so the mismatch is deliberate, not drift. Without this recorded, a future contributor is likely to "correct" one side to match the other and break the workspace's `origin` or the `.code-workspace` relative roots, which resolve against the local directory name.
 
 ## Deprecated decisions
-- **<short title>.** <decision> (YYYY-MM-DD)
-  **Why this matters long-term:** <why it was once true and why it no longer applies>
+
+- None.
