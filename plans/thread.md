@@ -62,3 +62,19 @@ Changes made:
 - GitHub remote (already created, empty): `https://github.com/michaeljthacker/workspace-AreSalmonAtBallardLocks.git` (repo name keeps the `workspace-` prefix, since the unprefixed name is taken by this frontend repo).
 - Local folder: `C:/Users/Micha/DevSpace/workspaces/AreSalmonAtBallardLocks` (unprefixed dir name — intentional; local dir name need not match the remote repo name).
 - M1 approach: create the local `workspaces/AreSalmonAtBallardLocks` folder, then `git init` / add the above URL as `origin`. No longer "pending human confirmation" — M1 should treat this as decided. (This should be captured as a decision in DECISIONS.md during M1 planning/execution.)
+
+---
+### Human.ApproveMilestone — 2026-09-06
+**Decision: CHANGES REQUIRED** — routing back to Principal.MilestonePlan to re-draft MILESTONE.md for B1-M1. Human reviewed the plan directly.
+
+Requested changes for the re-draft:
+
+1. **Collapse the phase count.** 4 phases is too much ceremony for pure scaffolding. Re-draft as **1 phase with multiple steps**, or **at most 2 phases**. Fold the current P1–P4 work (workspace folder/repo bootstrap, `.code-workspace`, devcontainer, `dev.sh` + placeholder frontend + verification) into that reduced structure. Keep acceptance criteria, but proportion the prose to the smaller structure.
+
+2. **Devcontainer is the standard for `mjt-pub-api` — lean on it.** The backend is already developed inside a devcontainer in other projects, so do the same here (this is what makes venv management easy). Drop the "host-venv fallback" framing as the primary path; the devcontainer is the intended venv/dependency environment. The plan can still note a check to run, but should not present a parallel host-venv workflow as co-equal. This also simplifies the "devcontainer verification caveat" note.
+
+3. **`mjt-pub-api` branching discipline (shared repo).** Feature work on the backend must branch off `main`. Because `mjt-pub-api` is shared and the human has other in-flight feature branches in other projects, stay cognizant of concurrent branches — don't assume this project owns the backend's working state. Capture this as a standing decision/standard when M1/M2 execute (belongs in DECISIONS.md or STANDARDS.md, and the shared_repos role note in config.json now records it too).
+
+4. **`config.json` shared_repos — DONE (this action).** Human authorized the update; `mjt-pub-api` is now registered as a shared repo (`path: ../../projects/mjt-pub-api`) with a role note covering the branch-off-main / shared-awareness guidance. The re-draft should therefore **remove the "shared_repos is empty — flag for the human" note** from MILESTONE.md and instead reference the now-configured shared scope. (Config is normally human-owned; the human explicitly asked SAM to make this edit.)
+
+5. **OPEN QUESTION — backend dependency hygiene (dependabot warnings): keep it OUT of this BUILD.** Human asked whether to fix `mjt-pub-api` dependency/dependabot warnings as part of standing up this project, or as a separate unrelated branch. **Recommendation: separate, wholly-unrelated `fix/` branch off `main`, NOT part of B1.** Rationale: (a) dependency hygiene on a shared repo affects every consumer, not just this project — coupling it to B1 muddies scope and review; (b) it's independently valuable and independently revertable; (c) B1 should be able to proceed against the backend as-is and not be blocked on a dependency-remediation effort. This keeps B1's blast radius to "add a webapp + workspace," not "also upgrade the shared platform." Do NOT add dependency remediation to any M1 phase. If the human agrees, this can be recorded as a DECISIONS.md entry (shared-repo dependency work is tracked/executed independently of feature builds). Awaiting human confirmation of this recommendation.

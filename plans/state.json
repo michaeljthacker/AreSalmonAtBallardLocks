@@ -4,7 +4,7 @@
 
   "build_id": "B1",
   "milestone_id": "M1",
-  "phase_id": null,
+  "phase_id": "P1",
   "step_id": null,
 
   "pause_type": "continue",
@@ -12,10 +12,10 @@
   "last_action": {
     "action_id": "PM.StatusUpdate",
     "result": "ok",
-    "summary": "Hand-off from Human.ApproveBuild. STATUS.md updated to reflect build approval and confirmed workspace repo. BACKLOG unchanged (no new items). CHANGELOG placeholder cleared (no phase delta). Routing to Principal.MilestonePlan."
+    "summary": "Hand-off after Human.ApproveMilestone: STATUS.md updated to reflect B1-M1 approval and P1 active. BACKLOG and CHANGELOG unchanged. Proceeding to Staff.DraftQuestions."
   },
 
-  "next_action_id": "Principal.MilestonePlan",
+  "next_action_id": "Staff.DraftQuestions",
 
   "blockers": [],
 

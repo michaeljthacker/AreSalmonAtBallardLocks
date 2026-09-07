@@ -4,15 +4,14 @@
 
 ## Now
 - Build: B1 — Are Salmon at Ballard Locks?
-- Milestone: M1
-- Phase: n/a (pre-planning)
+- Milestone: M1 — Workspace/devcontainer scaffolding
+- Phase: P1 (active)
 
 ## Blockers
 - None
 
 ## Recent
-- BUILD.md approved (pass 2). Principal.BuildReview applied all three human-requested changes: frontend stack set to plain static site (HTML/CSS/vanilla JS); `stencil-bible-guides` reframed as reference-to-adapt (not verbatim clone); S-1/S-2/S-3 folded explicitly into BUILD.md and BACKLOG.
-- Workspace repo confirmed by human: GitHub remote `https://github.com/michaeljthacker/workspace-AreSalmonAtBallardLocks.git`, local folder `C:/Users/Micha/DevSpace/workspaces/AreSalmonAtBallardLocks`. M1 should treat this as decided.
+- Milestone B1-M1 approved. Plan: 1 phase (P1), 5 ordered steps — workspace folder/repo, `.code-workspace`, devcontainer, `dev.sh` + placeholder frontend, end-to-end verification. Devcontainer-first; plain static HTML/CSS/JS frontend; `mjt-pub-api` registered as shared repo in `config.json`. Backend dependency hygiene (dependabot) deferred to a separate `fix/` branch, not part of B1.
 
 ## Next
-- Principal.MilestonePlan to plan M1.
+- Staff.DraftQuestions to surface any open questions before P1 implementation begins.
