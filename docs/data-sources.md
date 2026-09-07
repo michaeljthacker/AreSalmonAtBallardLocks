@@ -30,7 +30,8 @@ ladder** and is therefore not a vocabulary member (see "Corrections to prior
 assumptions").
 
 **Sources P2/P3 will use:** S1 as the primary for all three species; S2 as the
-multi-year historical bootstrap for sockeye only.
+multi-year historical bootstrap for sockeye; **S5 (archived snapshots of S1)
+as the multi-year bootstrap for Chinook and coho.**
 
 **Recent window for P3's importer: re-parse the entire current season, every
 run.** Justification under "Revision and backfill behavior".
@@ -202,19 +203,74 @@ extraction.
   per-year extraction cost at all. After excluding 2022 (half-missing) and
   quarantining 2016 (unexplained), that is ~15 sound years, right at the soft
   cap. Nothing needs truncating: the cap and the data agree by coincidence.
-- **Chinook and coho do not clear it, and cannot be made to from these
-  sources.** S1 carries current-season detail only and S2 omits both species
-  entirely. There is no cheap route to multi-year daily Chinook or coho
-  history; obtaining it would mean per-year archived snapshots of S1 (e.g.
-  Wayback Machine), which is a separate hand extraction *per year per
-  species* — squarely the case the Q-006 soft cap exists to stop.
+- **Chinook and coho are shallower, and come from S5 rather than from S1 or
+  S2.** Neither live source carries their history — S2 omits both species and
+  S1 carries only the current season. Archived snapshots of S1 do (see S5):
+  roughly 7 complete Chinook seasons and 8 complete coho seasons. Short of the
+  10-year floor, but obtainable and cheap.
 
-**This is the one finding that changes downstream plans.** It is not a
-blocker for P1 — the schema is unaffected, and `(date, species)` handles a
-deep sockeye series and shallow Chinook/coho series without modification —
-but P2's bootstrap will produce a database with 17 years of sockeye and one
-season of Chinook and coho, and M3's per-species seasonality baseline for
-Chinook and coho will rest on a single year. Flagged to P2 and M3.
+---
+
+## S5 — Archived snapshots of S1 (multi-year Chinook and coho history)
+
+| | |
+|---|---|
+| **Retrieval** | Internet Archive Wayback Machine, `https://web.archive.org/web/<timestamp>/https://wdfw.wa.gov/fishing/reports/counts/lake-washington`. Snapshot list via the CDX API. |
+| **Verified** | 2026-09-07. Snapshots for 2019, 2020, 2021, 2022, 2023, 2024 and 2025 fetched and parsed. |
+| **Why it works** | S1 is rewritten each season but is **not** truncated at season end — a post-season snapshot (Nov/Dec, or the following Jan–Mar before the new season starts) contains that season's **complete, fully-populated** daily tables for every species published that year. |
+| **Cost** | One HTTP fetch per year. Programmatic, not hand extraction — this is not the per-year-per-species manual cost the Q-006 soft cap exists to prevent. |
+
+### Verified coverage
+
+| Season | Sockeye | Chinook | Coho | Snapshot used |
+|---|---|---|---|---|
+| 2019 | 71 rows | **absent** | 31 rows | `20191118004802` |
+| 2020 | 64 | 55 | 32 | `20201112015837` |
+| 2021 | 90 | 85 | 31 | `20211129144111` |
+| 2022 | 90 | 87 | 33 | `20221204050354` |
+| 2023 | 90 | 95 | 33 | `20231205183339` |
+| 2024 | 90 | 95 | 33 | `20241204165029` |
+| 2025 | 90 | 95 | 33 | `20251010034418` |
+
+All rows in every table above are populated (no blank daily counts), and each
+species' final running total provides a per-year checksum — 2024 sockeye ends
+at 23,188, matching S1's annual-totals table for 2024 exactly.
+
+So: **Chinook 2020–2026 = 7 seasons; coho 2019–2026 = 8 seasons** (counting
+the live 2026 season from S1). Chinook is absent from the 2019 page entirely.
+
+### Limits and costs, stated plainly
+
+- **Coho daily granularity is inherently narrow.** Every coho table reports
+  daily counts only from ~9/1 onward (~31–33 rows); everything earlier is a
+  single pre-season range row that cannot be stored. That is not an archive
+  defect — it is how the source publishes coho, and it does cover the bulk of
+  the coho run per S1's own description ("early September into October").
+  Chinook similarly folds its pre-July passage into a leading range row.
+- **The page's shape drifts year to year, so this needs a per-year parser
+  with per-year validation.** Observed variation: table `id` attributes are
+  absent before ~2025 (match on heading text instead); heading order changes;
+  date formats vary across `09/01/2019`, `9/1/20`, `6/12`, `6/12-8/31/23`;
+  and the 2019 coho table has **four** columns rather than three (an extra
+  prior-year comparison series). A parser assuming one shape will silently
+  mis-read some years — per-year row counts and the running-total checksum
+  are what catch that.
+- **Practical floor is the 2019 season.** The CDX record for this URL begins
+  `20190719075717`; the path did not exist earlier (WDFW site redesign).
+- **Politeness.** This is a one-time bootstrap of ~8 requests, not a
+  recurring job. P3's scheduled importer never touches the archive.
+
+### Unexplored lead for pre-2019 depth
+
+The legacy pre-redesign site had a counts section at
+`wdfw.wa.gov/fishing/counts/sockeye/`, with CDX records back to **2010** —
+including `archives.html` and, notably, `chinook_chart.jpg` and
+`coho_chart.jpg`. Not yet fetched or assessed. If `archives.html` holds
+tabular history it could extend Chinook/coho past the 2019 floor and over the
+10-year mark; if the only artifacts are chart images, it cannot be used
+(reading counts off a JPEG is not extraction). **Open question, deliberately
+left open** — the current 7–8 seasons are enough for P2 to proceed, and this
+is worth an hour before P2's bootstrap is written, not a blocker.
 
 ---
 

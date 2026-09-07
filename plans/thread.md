@@ -198,3 +198,65 @@ Inspection first, then the schema it decided.
 - **`robots.txt` note for P3.** WDFW's `User-agent: *` group does not disallow the counts path, but the file does carry `Disallow: /` groups naming AI-training crawlers including `anthropic-ai`. P3's importer must send an honest project-identifying User-Agent. Disclosed in `docs/data-sources.md`: a browser User-Agent was used during inspection to probe the USACE WAF, and the committed importer must not carry that forward.
 - **USACE page returns 403** (WAF, both default and browser User-Agent). Per Q-007 that is a source finding, not an environment failure — S1 and S2 both returned 200 from the same shell. Nothing is lost; WDFW is the counting authority. USACE still needs attribution on M5's Sources page as ladder operator.
 - **No open data license.** WDFW pages carry a bare "all rights reserved" footer with no terms for these tables. Stance taken: store counts as facts, always attribute WDFW + Muckleshoot Indian Tribe, always link the source, never republish the pages. Worth a human sanity check before M5 ships publicly.
+
+---
+### Staff.ImplementationExecution — 2026-09-07 (correction)
+
+**Correcting finding 1 of the P1 review request above. It was wrong.** Human
+challenged it ("There's no other source of data for the various species? This
+is a MAJOR change vs. expectation") and the challenge was right — I had
+concluded "no obtainable multi-year daily history for Chinook and coho" after
+checking only four candidates, and never checked the obvious fifth.
+
+**Archived snapshots of the WDFW page do carry complete multi-year daily
+tables for all three species.** The page is rewritten each season but is not
+truncated at season end, so a post-season snapshot holds that year's full,
+fully-populated tables. Verified by fetching and parsing seven of them
+(2019–2025): the 2024 snapshot's sockeye running total ends at 23,188,
+matching the independent annual-totals table for 2024 exactly.
+
+Corrected coverage:
+
+| Species | Seasons | Route |
+|---|---|---|
+| Sockeye | 17 (2010–2026) | PSSP JSON, one download |
+| Chinook | 7 (2020–2026) | archived snapshots, one fetch per year |
+| Coho | 8 (2019–2026) | archived snapshots, one fetch per year |
+
+So "one season" was wrong by a factor of seven or eight. Cost is one HTTP
+fetch per year, programmatic — **not** the per-year-per-species manual
+extraction that the Q-006 soft cap exists to prevent, which is the specific
+reasoning error: I invoked that cap without checking whether the cost it
+guards against was actually the cost in front of me.
+
+Chinook and coho still fall short of Q-006's 10-year floor (7 and 8), so the
+floor question is live but is now a near-miss rather than a wall.
+
+**Also ruled out along the way:** the PSSP host has exactly one other feed
+(`salmon_counts.json`), and it is the Baker River trap — a different project.
+So the JSON route really is sockeye-only, as originally stated.
+
+**New unexplored lead, deliberately left open.** The legacy pre-redesign WDFW
+site had a counts section at `wdfw.wa.gov/fishing/counts/sockeye/` with
+archive records back to **2010**, including `archives.html` plus
+`chinook_chart.jpg` and `coho_chart.jpg`. Not fetched. If `archives.html`
+holds tables it could push Chinook/coho past the 10-year floor; if the only
+artifacts are chart JPEGs it is unusable. Worth an hour before P2 writes the
+bootstrap — not a blocker, since 7–8 seasons is enough for P2 to proceed.
+
+**Known limits of the archived route** (recorded in `docs/data-sources.md`):
+coho publishes daily only from ~9/1 each year with the earlier run folded
+into an unstorable range row; the page's shape drifts across years (table
+`id`s absent before ~2025, heading order changes, four date formats, and the
+2019 coho table has four columns instead of three), so the bootstrap needs a
+per-year parser with per-year row-count and running-total validation rather
+than one parser assumed to fit all years.
+
+**No code or schema change.** `(date, species)` and the vocabulary are
+unaffected — uneven per-species depth was always fine, and the three species
+are unchanged. The P1 commits stand as reviewed. What changed is P2's
+bootstrap scope (it now has a real Chinook/coho source to load) and M3's
+baseline, which no longer rests on a single year for those two species.
+
+**Session paused here at human request.** Picking up in the morning. State is
+unchanged: still routing to `PM.StatusUpdate` for B1-M2-P1, nothing pushed.
